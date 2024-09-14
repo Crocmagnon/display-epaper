@@ -169,16 +169,10 @@ func (e *EPD) Init() {
 	e.reset()
 
 	e.sendCommand(0x01)
-	e.sendData(0x07)
-	e.sendData(0x07)
-	e.sendData(0x3f)
-	e.sendData(0x3f)
+	e.sendDataSlice([]byte{0x07, 0x07, 0x3f, 0x3f})
 
 	e.sendCommand(0x06)
-	e.sendData(0x17)
-	e.sendData(0x17)
-	e.sendData(0x28)
-	e.sendData(0x17)
+	e.sendDataSlice([]byte{0x17, 0x17, 0x28, 0x17})
 
 	e.sendCommand(0x04)
 	time.Sleep(100 * time.Millisecond)
@@ -188,20 +182,40 @@ func (e *EPD) Init() {
 	e.sendData(0x0f)
 
 	e.sendCommand(0x61)
-	e.sendData(0x03)
-	e.sendData(0x20)
-	e.sendData(0x01)
-	e.sendData(0xe0)
+	e.sendDataSlice([]byte{0x03, 0x20, 0x01, 0xe0})
 
 	e.sendCommand(0x15)
 	e.sendData(0x00)
 
 	e.sendCommand(0x50)
-	e.sendData(0x11)
-	e.sendData(0x07)
+	e.sendDataSlice([]byte{0x11, 0x07})
 
 	e.sendCommand(0x60)
 	e.sendData(0x22)
+}
+
+func (e *EPD) InitFast() {
+	log.Println("initializing Fast EPD")
+	e.reset()
+
+	e.sendCommand(0x00)
+	e.sendData(0x0f)
+
+	e.sendCommand(0x04)
+	time.Sleep(100 * time.Millisecond)
+	e.readBusy()
+
+	e.sendCommand(0x06)
+	e.sendDataSlice([]byte{0x27, 0x27, 0x18, 0x17})
+
+	e.sendCommand(0xe0)
+	e.sendData(0x02)
+
+	e.sendCommand(0xe5)
+	e.sendData(0x5a)
+
+	e.sendCommand(0x50)
+	e.sendDataSlice([]byte{0x11, 0x07})
 }
 
 func (e *EPD) Clear() {

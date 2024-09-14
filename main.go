@@ -61,7 +61,8 @@ func run() error {
 		return fmt.Errorf("initializing epd: %w", err)
 	}
 
-	display.Init()
+	//display.Init()
+	display.InitFast()
 	display.Clear()
 
 	black, err := getBlack()
