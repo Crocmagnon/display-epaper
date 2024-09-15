@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/transports"
+	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
@@ -34,7 +35,11 @@ func main() {
 		CacheLocation: os.Getenv("FETE_CACHE_LOCATION"),
 	})
 
-	if err := run(ctx, transportsClient, feteClient); err != nil {
+	weatherClient := weather.New(nil, weather.Config{
+		APIKey: os.Getenv("WEATHER_API_KEY"),
+	})
+
+	if err := run(ctx, transportsClient, feteClient, weatherClient); err != nil {
 		log.Fatal("error: ", err)
 	}
 

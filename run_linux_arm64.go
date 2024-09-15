@@ -6,12 +6,18 @@ import (
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/transports"
+	"github.com/Crocmagnon/display-epaper/weather"
 	"log"
 	"periph.io/x/host/v3"
 	"time"
 )
 
-func run(ctx context.Context, transportsClient *transports.Client, feteClient *fete.Client) error {
+func run(
+	ctx context.Context,
+	transportsClient *transports.Client,
+	feteClient *fete.Client,
+	weatherClient *weather.Client,
+) error {
 	_, err := host.Init()
 	if err != nil {
 		return fmt.Errorf("initializing host: %w", err)
@@ -30,7 +36,7 @@ func run(ctx context.Context, transportsClient *transports.Client, feteClient *f
 		default:
 		}
 
-		err = loop(ctx, display, transportsClient, feteClient)
+		err = loop(ctx, display, transportsClient, feteClient, weatherClient)
 		if err != nil {
 			log.Printf("error looping: %v\n", err)
 		}
@@ -45,6 +51,7 @@ func loop(
 	display *epd.EPD,
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
+	weatherClient *weather.Client,
 ) error {
 	defer func() {
 		if err := display.Sleep(); err != nil {
@@ -59,7 +66,7 @@ func loop(
 
 	display.Clear()
 
-	black, err := getBlack(ctx, time.Now, transportsClient, feteClient)
+	black, err := getBlack(ctx, time.Now, transportsClient, feteClient, weatherClient)
 	if err != nil {
 		return fmt.Errorf("getting black: %w", err)
 	}

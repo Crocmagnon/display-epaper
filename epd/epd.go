@@ -317,5 +317,5 @@ func (e *EPD) sendImg(img image.Image) {
 }
 
 func isdark(r, g, b, _ uint32) bool {
-	return r < 255 || g < 255 || b < 255
+	return r < 65535 || g < 65535 || b < 65535
 }
