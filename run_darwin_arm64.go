@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
-	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d/draw2dimg"
@@ -16,7 +15,6 @@ func run(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
-	quotesClient *quotes.Client,
 ) error {
 	img, err := getBlack(
 		ctx,
@@ -30,7 +28,6 @@ func run(
 		transportsClient,
 		feteClient,
 		weatherClient,
-		quotesClient,
 	)
 	if err != nil {
 		log.Fatal(err)

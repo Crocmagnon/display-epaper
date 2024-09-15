@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
-	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"log"
@@ -13,13 +12,7 @@ import (
 	"time"
 )
 
-func run(
-	ctx context.Context,
-	transportsClient *transports.Client,
-	feteClient *fete.Client,
-	weatherClient *weather.Client,
-	quotesClient *quotes.Client,
-) error {
+func run(ctx context.Context, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client) error {
 	_, err := host.Init()
 	if err != nil {
 		return fmt.Errorf("initializing host: %w", err)
@@ -44,7 +37,6 @@ func run(
 			transportsClient,
 			feteClient,
 			weatherClient,
-			quotesClient,
 		)
 		if err != nil {
 			log.Printf("error looping: %v\n", err)
@@ -61,7 +53,6 @@ func loop(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
-	quotesClient *quotes.Client,
 ) error {
 	defer func() {
 		if err := display.Sleep(); err != nil {
@@ -82,7 +73,6 @@ func loop(
 		transportsClient,
 		feteClient,
 		weatherClient,
-		quotesClient,
 	)
 	if err != nil {
 		return fmt.Errorf("getting black: %w", err)

@@ -36,7 +36,6 @@ func getBlack(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
-	quotesClient *quotes.Client,
 ) (*image.RGBA, error) {
 	bus, err := transportsClient.GetTCLPassages(ctx, 290)
 	if err != nil {
@@ -58,10 +57,7 @@ func getBlack(
 	if err != nil {
 		log.Println("error getting weather:", err)
 	}
-	quote, err := quotesClient.GetQuote(ctx)
-	if err != nil {
-		log.Println("error getting quotes:", err)
-	}
+	quote := quotes.GetQuote(nowFunc())
 
 	img := newWhite()
 
@@ -82,12 +78,8 @@ func getBlack(
 	return img, nil
 }
 
-func drawQuote(gc *draw2dimg.GraphicContext, quote *quotes.Quote) {
-	if quote == nil {
-		return
-	}
-
-	text(gc, quote.Citation.Citation, 15, leftX, 450)
+func drawQuote(gc *draw2dimg.GraphicContext, quote string) {
+	text(gc, quote, 15, leftX, 450)
 
 }
 
