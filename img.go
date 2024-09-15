@@ -10,6 +10,8 @@ import (
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 	"image"
 	"image/color"
 	"log"
@@ -84,10 +86,10 @@ func drawWeather(gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
 		log.Println("Failed to draw weather icon:", err)
 	}
 
-	text(gc, formatTemp("Act", wthr.Current.Temp), 18, 100, 45)
-	text(gc, formatTemp("Max", daily.Temp.Max), 18, 220, 45)
-	text(gc, fmt.Sprintf("Pluie : %v%%", int(math.Round(daily.Pop))), 18, 100, 75)
-	text(gc, dailyWeather.Description, 18, leftX, 110)
+	text(gc, formatTemp("Act", wthr.Current.Temp), 18, 120, 45)
+	text(gc, formatTemp("Max", daily.Temp.Max), 18, 240, 45)
+	text(gc, fmt.Sprintf("Pluie : %v%%", int(math.Round(daily.Pop))), 18, 120, 80)
+	text(gc, cases.Title(language.French).String(dailyWeather.Description), 18, 120, 115)
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {
@@ -121,8 +123,8 @@ func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffse
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
-	text(gc, now.Format("15:04"), 60, leftX, 240)
-	text(gc, getDate(now), 30, leftX, 285)
+	text(gc, now.Format("15:04"), 110, leftX, 300)
+	text(gc, getDate(now), 30, leftX, 345)
 }
 
 func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete) {
@@ -130,7 +132,7 @@ func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete) {
 		return
 	}
 
-	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 18, leftX, 400)
+	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 18, leftX, 380)
 }
 
 func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffset float64) {
