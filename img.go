@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d"
@@ -29,7 +30,14 @@ const (
 	rightX = 530
 )
 
-func getBlack(ctx context.Context, nowFunc func() time.Time, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client) (*image.RGBA, error) {
+func getBlack(
+	ctx context.Context,
+	nowFunc func() time.Time,
+	transportsClient *transports.Client,
+	feteClient *fete.Client,
+	weatherClient *weather.Client,
+	quotesClient *quotes.Client,
+) (*image.RGBA, error) {
 	bus, err := transportsClient.GetTCLPassages(ctx, 290)
 	if err != nil {
 		log.Println("error getting bus:", err)
@@ -50,6 +58,10 @@ func getBlack(ctx context.Context, nowFunc func() time.Time, transportsClient *t
 	if err != nil {
 		log.Println("error getting weather:", err)
 	}
+	quote, err := quotesClient.GetQuote(ctx)
+	if err != nil {
+		log.Println("error getting quotes:", err)
+	}
 
 	img := newWhite()
 
@@ -65,8 +77,18 @@ func getBlack(ctx context.Context, nowFunc func() time.Time, transportsClient *t
 	drawDate(gc, nowFunc())
 	drawFete(gc, fetes)
 	drawWeather(gc, wthr)
+	drawQuote(gc, quote)
 
 	return img, nil
+}
+
+func drawQuote(gc *draw2dimg.GraphicContext, quote *quotes.Quote) {
+	if quote == nil {
+		return
+	}
+
+	text(gc, quote.Citation.Citation, 15, leftX, 450)
+
 }
 
 func drawWeather(gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {

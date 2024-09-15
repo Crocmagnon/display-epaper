@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/carlmjohnson/requests"
-	"io"
 	"log"
 	"net/http"
 	"os"
@@ -83,16 +82,6 @@ func (c *Client) GetFete(ctx context.Context, date time.Time) (res *Fete, err er
 	err = requests.URL("https://fetedujour.fr").
 		Pathf("/api/v2/%v/json-normal-%d-%d", c.config.APIKey, date.Day(), date.Month()).
 		UserAgent("e-paper-display").
-		AddValidator(func(resp *http.Response) error {
-			if resp.StatusCode >= 400 {
-				body, err := io.ReadAll(resp.Body)
-				if err != nil {
-					return err
-				}
-				return fmt.Errorf("Fete API error: %s, %s", resp.Header, string(body))
-			}
-			return nil
-		}).
 		Client(c.client).
 		ToJSON(&res).
 		Fetch(ctx)

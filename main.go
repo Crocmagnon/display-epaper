@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/golang/freetype/truetype"
@@ -39,7 +40,11 @@ func main() {
 		APIKey: os.Getenv("WEATHER_API_KEY"),
 	})
 
-	if err := run(ctx, transportsClient, feteClient, weatherClient); err != nil {
+	quotesClient := quotes.New(nil, quotes.Config{
+		CacheLocation: os.Getenv("QUOTES_CACHE_LOCATION"),
+	})
+
+	if err := run(ctx, transportsClient, feteClient, weatherClient, quotesClient); err != nil {
 		log.Fatal("error: ", err)
 	}
 
