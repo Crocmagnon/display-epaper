@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d"
@@ -30,7 +31,12 @@ func main() {
 		Authorization: os.Getenv("TRANSPORTS_AUTHORIZATION"),
 	})
 
-	if err := run(ctx, transportsClient); err != nil {
+	feteClient := fete.New(nil, fete.Config{
+		APIKey:        os.Getenv("FETE_API_KEY"),
+		CacheLocation: os.Getenv("FETE_CACHE_LOCATION"),
+	})
+
+	if err := run(ctx, transportsClient, feteClient); err != nil {
 		log.Fatal("error: ", err)
 	}
 

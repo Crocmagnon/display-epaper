@@ -4,13 +4,14 @@ import (
 	"context"
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
+	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"log"
 	"periph.io/x/host/v3"
 	"time"
 )
 
-func run(ctx context.Context, transportsClient *transports.Client) error {
+func run(ctx context.Context, transportsClient *transports.Client, feteClient *fete.Client) error {
 	_, err := host.Init()
 	if err != nil {
 		return fmt.Errorf("initializing host: %w", err)
@@ -29,7 +30,7 @@ func run(ctx context.Context, transportsClient *transports.Client) error {
 		default:
 		}
 
-		err = loop(ctx, display, transportsClient)
+		err = loop(ctx, display, transportsClient, feteClient)
 		if err != nil {
 			log.Printf("error looping: %v\n", err)
 		}
@@ -39,7 +40,12 @@ func run(ctx context.Context, transportsClient *transports.Client) error {
 	}
 }
 
-func loop(ctx context.Context, display *epd.EPD, transportsClient *transports.Client) error {
+func loop(
+	ctx context.Context,
+	display *epd.EPD,
+	transportsClient *transports.Client,
+	feteClient *fete.Client,
+) error {
 	defer func() {
 		if err := display.Sleep(); err != nil {
 			log.Printf("error sleeping: %v\n", err)
@@ -53,7 +59,7 @@ func loop(ctx context.Context, display *epd.EPD, transportsClient *transports.Cl
 
 	display.Clear()
 
-	black, err := getBlack(ctx, transportsClient)
+	black, err := getBlack(ctx, time.Now, transportsClient, feteClient)
 	if err != nil {
 		return fmt.Errorf("getting black: %w", err)
 	}
