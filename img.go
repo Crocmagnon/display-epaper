@@ -20,9 +20,13 @@ func getBlack(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 ) (*image.RGBA, error) {
-	passages, err := transportsClient.GetTCLPassages(ctx, 290)
+	bus, err := transportsClient.GetTCLPassages(ctx, 290)
 	if err != nil {
-		return nil, fmt.Errorf("getting passages: %w", err)
+		return nil, fmt.Errorf("getting bus: %w", err)
+	}
+	tram, err := transportsClient.GetTCLPassages(ctx, 34068)
+	if err != nil {
+		return nil, fmt.Errorf("getting tram: %w", err)
 	}
 
 	fetes, err := feteClient.GetFete(ctx, nowFunc())
@@ -37,33 +41,40 @@ func getBlack(
 	gc := draw2dimg.NewGraphicContext(img)
 
 	gc.SetFillRule(draw2d.FillRuleWinding)
-	gc.SetFillColor(color.RGBA{0, 0, 0, 255})
+	gc.SetFillColor(color.RGBA{255, 255, 255, 255})
 	gc.SetStrokeColor(color.RGBA{0, 0, 0, 255})
 
-	drawPassages(gc, passages)
+	rect(gc, 0, 0, 800, 480)
 
-	drawFete(gc, fetes, nowFunc())
+	drawTCL(gc, bus, 30)
+	drawTCL(gc, tram, 150)
+	drawDateFete(gc, fetes, nowFunc())
 
 	return img, nil
 }
 
-func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete, now time.Time) {
-	text(gc, getDate(now), 50, 20, 235)
-	text(gc, fetes.Name, 18, 20, 270)
+func drawDateFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete, now time.Time) {
+	text(gc, now.Format("15:04"), 40, 20, 190)
+	text(gc, getDate(now), 50, 20, 255)
+	text(gc, fetes.Name, 18, 20, 290)
 }
 
-func drawPassages(gc *draw2dimg.GraphicContext, passages *transports.Passages) {
+func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffset float64) {
 	for i, passage := range passages.Passages {
 		x := float64(600 + i*100)
-		text(gc, passage.Ligne, 15, x, 20)
+		text(gc, passage.Ligne, 15, x, yoffset)
 		for j, delay := range passage.Delays {
-			y := float64(20 + (j+1)*30)
+			y := yoffset + float64(j+1)*30
 			text(gc, delay, 15, x, y)
+			if j >= 2 { // limit number of delays displayed
+				break
+			}
 		}
 	}
 }
 
 func text(gc *draw2dimg.GraphicContext, s string, size, x, y float64) {
+	gc.SetFillColor(color.RGBA{0, 0, 0, 255})
 	gc.SetFontData(draw2d.FontData{Name: fontName})
 	gc.SetFontSize(size)
 	gc.FillStringAt(s, x, y)
