@@ -27,9 +27,7 @@ func main() {
 	fontCache.Store(draw2d.FontData{Name: fontName}, font)
 	draw2d.SetFontCache(fontCache)
 
-	transportsClient := transports.New(nil, transports.Config{
-		Authorization: os.Getenv("TRANSPORTS_AUTHORIZATION"),
-	})
+	transportsClient := transports.New(nil, transports.Config{})
 
 	feteClient := fete.New(nil, fete.Config{
 		APIKey:        os.Getenv("FETE_API_KEY"),

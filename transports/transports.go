@@ -24,7 +24,6 @@ type Passages struct {
 }
 
 type Config struct {
-	Authorization string
 }
 
 type Client struct {
@@ -44,8 +43,26 @@ func New(httpClient *http.Client, config Config) *Client {
 
 func (c *Client) GetTCLPassages(ctx context.Context, stop int) (res *Passages, err error) {
 	err = requests.URL("https://tcl.augendre.info").
-		Pathf("/stop/%v", stop).
-		Header("Authorization", c.config.Authorization).
+		Pathf("/tcl/stop/%v", stop).
+		Client(c.client).
+		ToJSON(&res).
+		Fetch(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("calling api: %w", err)
+	}
+	return res, nil
+}
+
+type Station struct {
+	Name             string `json:"name"`
+	BikesAvailable   int    `json:"bikes_available"`
+	DocksAvailable   int    `json:"docks_available"`
+	AvailabilityCode int    `json:"availability_code"`
+}
+
+func (c *Client) GetVelovStation(ctx context.Context, station int) (res *Station, err error) {
+	err = requests.URL("https://tcl.augendre.info").
+		Pathf("/velov/station/%v", station).
 		Client(c.client).
 		ToJSON(&res).
 		Fetch(ctx)

@@ -28,6 +28,10 @@ func getBlack(
 	if err != nil {
 		return nil, fmt.Errorf("getting tram: %w", err)
 	}
+	velovRoc, err := transportsClient.GetVelovStation(ctx, 10044)
+	if err != nil {
+		return nil, fmt.Errorf("getting velov: %w", err)
+	}
 
 	fetes, err := feteClient.GetFete(ctx, nowFunc())
 	if err != nil {
@@ -48,9 +52,17 @@ func getBlack(
 
 	drawTCL(gc, bus, 30)
 	drawTCL(gc, tram, 150)
+	drawVelov(gc, velovRoc, 290)
 	drawDateFete(gc, fetes, nowFunc())
 
 	return img, nil
+}
+
+func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffset float64) {
+	x := float64(600)
+	text(gc, station.Name, 15, x, yOffset)
+	text(gc, fmt.Sprintf("V : %v - P : %v", station.BikesAvailable, station.DocksAvailable), 15, x, yOffset+30)
+	//text(gc, fmt.Sprintf("P : %v", station.DocksAvailable), 15, x, yOffset+60)
 }
 
 func drawDateFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete, now time.Time) {
