@@ -20,7 +20,9 @@ func run(ctx context.Context, transportsClient *transports.Client, feteClient *f
 	if err != nil {
 		log.Fatal(err)
 	}
-	draw2dimg.SaveToPngFile("out/black.png", img)
+	if err := draw2dimg.SaveToPngFile("out/black.png", img); err != nil {
+		log.Fatalf("error saving image: %v", err)
+	}
 
 	log.Println("done")
 

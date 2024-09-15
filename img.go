@@ -51,8 +51,8 @@ func getBlack(
 	rect(gc, 0, 0, 800, 480)
 
 	drawTCL(gc, bus, 30)
-	drawTCL(gc, tram, 150)
-	drawVelov(gc, velovRoc, 290)
+	drawTCL(gc, tram, 180)
+	drawVelov(gc, velovRoc, 350)
 	drawDateFete(gc, fetes, nowFunc())
 
 	return img, nil
@@ -62,13 +62,12 @@ func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffse
 	x := float64(600)
 	text(gc, station.Name, 15, x, yOffset)
 	text(gc, fmt.Sprintf("V : %v - P : %v", station.BikesAvailable, station.DocksAvailable), 15, x, yOffset+30)
-	//text(gc, fmt.Sprintf("P : %v", station.DocksAvailable), 15, x, yOffset+60)
 }
 
 func drawDateFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete, now time.Time) {
 	text(gc, now.Format("15:04"), 40, 20, 190)
 	text(gc, getDate(now), 50, 20, 255)
-	text(gc, fetes.Name, 18, 20, 290)
+	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 17, 20, 400)
 }
 
 func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffset float64) {
