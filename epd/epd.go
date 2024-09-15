@@ -74,7 +74,7 @@ func New() (*EPD, error) {
 	return epd, nil
 }
 
-func (e *EPD) TurnOff() error {
+func (e *EPD) turnOff() error {
 	log.Println("turning off...")
 	if err := e.spiReg.Close(); err != nil {
 		return fmt.Errorf("closing SPI: %w", err)
@@ -220,26 +220,12 @@ func (e *EPD) InitFast() {
 
 func (e *EPD) Clear() {
 	log.Println("clearing epd")
-	redBuf := make([]byte, Width*Height/8)
-	for i := range redBuf {
-		redBuf[i] = 0x00
-	}
+	e.Fill(White)
 
-	blackBuf := make([]byte, Width*Height/8)
-	for i := range blackBuf {
-		blackBuf[i] = 0xff
-	}
-
-	e.sendCommand(0x10)
-	e.sendDataSlice(blackBuf)
-
-	e.sendCommand(0x13)
-	e.sendDataSlice(redBuf)
-
-	//e.refresh()
+	//e.Refresh()
 }
 
-func (e *EPD) refresh() {
+func (e *EPD) Refresh() {
 	log.Println("refreshing...")
 	e.sendCommand(0x12)
 	time.Sleep(100 * time.Millisecond)
@@ -255,7 +241,7 @@ func (e *EPD) Sleep() error {
 	e.sendData(0xa5)
 
 	time.Sleep(2 * time.Second)
-	if err := e.TurnOff(); err != nil {
+	if err := e.turnOff(); err != nil {
 		return fmt.Errorf("turning off: %w", err)
 	}
 
@@ -271,19 +257,19 @@ const (
 )
 
 func (e *EPD) Fill(c Color) {
-	log.Println("filling... (not doing anything yet)")
+	log.Println("filling...")
 
-	//switch c {
-	//case White:
-	//	e.Draw(nil, nil)
-	//case Black:
-	//	e.Draw(image.Black, nil)
-	//case Red:
-	//	e.Draw(nil, image.Black)
-	//}
+	switch c {
+	case White:
+		e.Send(image.White, image.Black)
+	case Black:
+		e.Send(image.Black, image.Black)
+	case Red:
+		e.Send(image.White, image.White)
+	}
 }
 
-func (e *EPD) Draw(black image.Image, red image.Image) {
+func (e *EPD) Send(black image.Image, red image.Image) {
 	log.Println("drawing...")
 	if black != nil {
 		log.Println("sending black")
@@ -294,9 +280,6 @@ func (e *EPD) Draw(black image.Image, red image.Image) {
 		log.Println("sending red")
 		e.sendCommand(0x13) // write red data
 		e.sendImg(red)
-	}
-	if black != nil || red != nil {
-		e.refresh()
 	}
 }
 
