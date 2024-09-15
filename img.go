@@ -11,8 +11,6 @@ import (
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 	"image"
 	"image/color"
 	"log"
@@ -100,10 +98,11 @@ func drawWeather(gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
 		log.Println("Failed to draw weather icon:", err)
 	}
 
-	text(gc, formatTemp("Act", wthr.Current.Temp), 18, 120, 45)
-	text(gc, formatTemp("Max", daily.Temp.Max), 18, 240, 45)
-	text(gc, fmt.Sprintf("Pluie : %v%%", int(math.Round(daily.Pop))), 18, 120, 80)
-	text(gc, cases.Title(language.French).String(dailyWeather.Description), 18, 120, 115)
+	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 120)
+
+	text(gc, "max "+formatTemp(daily.Temp.Max), 18, 120, 45)
+	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), 18, 120, 80)
+	text(gc, dailyWeather.Description, 18, 120, 115)
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {
@@ -123,8 +122,8 @@ func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather)
 	return nil
 }
 
-func formatTemp(name string, temp float64) string {
-	return fmt.Sprintf("%v : %v°C", name, int(math.Round(temp)))
+func formatTemp(temp float64) string {
+	return fmt.Sprintf("%v°C", int(math.Round(temp)))
 }
 
 func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffset float64) {
