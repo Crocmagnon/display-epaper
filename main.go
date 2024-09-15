@@ -36,7 +36,8 @@ func main() {
 	})
 
 	weatherClient := weather.New(nil, weather.Config{
-		APIKey: os.Getenv("WEATHER_API_KEY"),
+		APIKey:        os.Getenv("WEATHER_API_KEY"),
+		CacheLocation: os.Getenv("WEATHER_CACHE_LOCATION"),
 	})
 
 	if err := run(ctx, transportsClient, feteClient, weatherClient); err != nil {

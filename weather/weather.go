@@ -2,13 +2,19 @@ package weather
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/carlmjohnson/requests"
+	"log"
 	"net/http"
+	"os"
+	"time"
 )
 
 type Config struct {
-	APIKey string
+	APIKey        string
+	CacheLocation string
 }
 
 type Client struct {
@@ -61,6 +67,47 @@ type Prevision struct {
 	} `json:"alerts"`
 }
 
+var errTooOld = errors.New("prevision is too old")
+
+func loadFromDisk(location string) (Prevision, error) {
+	stat, err := os.Stat(location)
+	if err != nil {
+		return Prevision{}, fmt.Errorf("getting file info: %w", err)
+	}
+
+	if stat.ModTime().Add(10 * time.Minute).Before(time.Now()) {
+		return Prevision{}, errTooOld
+	}
+
+	file, err := os.Open(location)
+	if err != nil {
+		return Prevision{}, fmt.Errorf("opening prevision: %w", err)
+	}
+
+	defer file.Close()
+
+	var res Prevision
+	if err = json.NewDecoder(file).Decode(&res); err != nil {
+		return Prevision{}, fmt.Errorf("decoding prevision: %w", err)
+	}
+
+	return res, nil
+}
+
+func (p Prevision) dumpToDisk(location string) error {
+	file, err := os.Create(location)
+	if err != nil {
+		return fmt.Errorf("creating prevision: %w", err)
+	}
+
+	defer file.Close()
+
+	if err = json.NewEncoder(file).Encode(p); err != nil {
+		return fmt.Errorf("dumping prevision: %w", err)
+	}
+	return nil
+}
+
 type Daily struct {
 	Dt        int     `json:"dt"`
 	Sunrise   int     `json:"sunrise"`
@@ -104,6 +151,13 @@ type Weather struct {
 }
 
 func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
+	if val, err := loadFromDisk(c.config.CacheLocation); nil == err {
+		log.Println("found weather in cache")
+		return &val, nil
+	}
+
+	log.Println("querying weather")
+
 	err = requests.URL("https://api.openweathermap.org/data/3.0/onecall").
 		Client(c.client).
 		Param("lat", "45.78").
@@ -116,6 +170,10 @@ func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
 		Fetch(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("calling openweathermap: %w", err)
+	}
+
+	if err := res.dumpToDisk(c.config.CacheLocation); err != nil {
+		log.Printf("error dumping files to disk: %v\n", err)
 	}
 
 	return res, nil
