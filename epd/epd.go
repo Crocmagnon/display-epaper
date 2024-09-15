@@ -45,46 +45,7 @@ func New() (*EPD, error) {
 		partFlag: 1,
 	}
 
-	if err := epd.resetPin.Out(gpio.Low); err != nil {
-		return nil, fmt.Errorf("setting reset pin to low: %w", err)
-	}
-	if err := epd.dcPin.Out(gpio.Low); err != nil {
-		return nil, fmt.Errorf("setting dc pin to low: %w", err)
-	}
-	if err := epd.csPin.Out(gpio.Low); err != nil {
-		return nil, fmt.Errorf("setting cs pin to low: %w", err)
-	}
-	if err := epd.pwrPin.Out(gpio.High); err != nil {
-		return nil, fmt.Errorf("setting pwr pin to low: %w", err)
-	}
-
-	var err error
-
-	if epd.spiReg, err = spireg.Open("0"); err != nil {
-		return nil, fmt.Errorf("opening SPI: %w", err)
-	}
-
-	c, err := epd.spiReg.Connect(4*physic.MegaHertz, spi.Mode0, 8)
-	if err != nil {
-		return nil, fmt.Errorf("connecting to SPI: %w", err)
-	}
-
-	epd.spi = c
-
 	return epd, nil
-}
-
-func (e *EPD) turnOff() error {
-	log.Println("turning off...")
-	if err := e.spiReg.Close(); err != nil {
-		return fmt.Errorf("closing SPI: %w", err)
-	}
-
-	e.resetPin.Out(gpio.Low)
-	e.dcPin.Out(gpio.Low)
-	e.pwrPin.Out(gpio.Low)
-
-	return nil
 }
 
 func (e *EPD) reset() {
@@ -97,7 +58,6 @@ func (e *EPD) reset() {
 }
 
 func (e *EPD) sendCommand(cmd byte) {
-	log.Printf("sending command 0x%02X\n", cmd)
 	e.dcPin.Out(gpio.Low)
 	e.csPin.Out(gpio.Low)
 	if _, err := e.spiWrite([]byte{cmd}); err != nil {
@@ -116,7 +76,6 @@ func (e *EPD) sendData(data byte) {
 }
 
 func (e *EPD) sendDataSlice(data []byte) {
-	log.Printf("sending data slice %v\n", len(data))
 	e.dcPin.Out(gpio.High)
 	toSend := len(data)
 	const maxSize = 4096
@@ -164,8 +123,44 @@ func (e *EPD) readBusy() {
 	time.Sleep(200 * time.Millisecond)
 }
 
-func (e *EPD) Init() {
+func (e *EPD) turnOn() error {
+	log.Println("turning on")
+	if err := e.resetPin.Out(gpio.Low); err != nil {
+		return fmt.Errorf("setting reset pin to low: %w", err)
+	}
+	if err := e.dcPin.Out(gpio.Low); err != nil {
+		return fmt.Errorf("setting dc pin to low: %w", err)
+	}
+	if err := e.csPin.Out(gpio.Low); err != nil {
+		return fmt.Errorf("setting cs pin to low: %w", err)
+	}
+	if err := e.pwrPin.Out(gpio.High); err != nil {
+		return fmt.Errorf("setting pwr pin to low: %w", err)
+	}
+
+	var err error
+
+	if e.spiReg, err = spireg.Open("0"); err != nil {
+		return fmt.Errorf("opening SPI: %w", err)
+	}
+
+	c, err := e.spiReg.Connect(4*physic.MegaHertz, spi.Mode0, 8)
+	if err != nil {
+		return fmt.Errorf("connecting to SPI: %w", err)
+	}
+
+	e.spi = c
+
+	return nil
+}
+
+func (e *EPD) Init() error {
 	log.Println("initializing EPD")
+
+	if err := e.turnOn(); err != nil {
+		return fmt.Errorf("turning on: %w", err)
+	}
+
 	e.reset()
 
 	e.sendCommand(0x01)
@@ -192,10 +187,17 @@ func (e *EPD) Init() {
 
 	e.sendCommand(0x60)
 	e.sendData(0x22)
+
+	return nil
 }
 
-func (e *EPD) InitFast() {
+func (e *EPD) InitFast() error {
 	log.Println("initializing Fast EPD")
+
+	if err := e.turnOn(); err != nil {
+		return fmt.Errorf("turning on: %w", err)
+	}
+
 	e.reset()
 
 	e.sendCommand(0x00)
@@ -216,13 +218,13 @@ func (e *EPD) InitFast() {
 
 	e.sendCommand(0x50)
 	e.sendDataSlice([]byte{0x11, 0x07})
+
+	return nil
 }
 
 func (e *EPD) Clear() {
 	log.Println("clearing epd")
 	e.Fill(White)
-
-	//e.Refresh()
 }
 
 func (e *EPD) Refresh() {
@@ -233,7 +235,7 @@ func (e *EPD) Refresh() {
 }
 
 func (e *EPD) Sleep() error {
-	log.Println("sleeping...")
+	log.Println("sleeping display...")
 	e.sendCommand(0x02)
 	e.readBusy()
 
@@ -244,6 +246,19 @@ func (e *EPD) Sleep() error {
 	if err := e.turnOff(); err != nil {
 		return fmt.Errorf("turning off: %w", err)
 	}
+
+	return nil
+}
+
+func (e *EPD) turnOff() error {
+	log.Println("turning off...")
+	if err := e.spiReg.Close(); err != nil {
+		return fmt.Errorf("closing SPI: %w", err)
+	}
+
+	e.resetPin.Out(gpio.Low)
+	e.dcPin.Out(gpio.Low)
+	e.pwrPin.Out(gpio.Low)
 
 	return nil
 }
@@ -270,7 +285,6 @@ func (e *EPD) Fill(c Color) {
 }
 
 func (e *EPD) Send(black image.Image, red image.Image) {
-	log.Println("drawing...")
 	if black != nil {
 		log.Println("sending black")
 		e.sendCommand(0x10) // write bw data

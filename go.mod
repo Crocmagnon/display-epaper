@@ -11,4 +11,9 @@ require (
 	golang.org/x/image v0.20.0
 )
 
-require github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+require (
+	github.com/carlmjohnson/requests v0.24.2
+	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
+)
+
+require golang.org/x/net v0.27.0 // indirect

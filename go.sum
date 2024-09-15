@@ -1,3 +1,5 @@
+github.com/carlmjohnson/requests v0.24.2 h1:JDakhAmTIKL/qL/1P7Kkc2INGBJIkIFP6xUeUmPzLso=
+github.com/carlmjohnson/requests v0.24.2/go.mod h1:duYA/jDnyZ6f3xbcF5PpZ9N8clgopubP2nK5i6MVMhU=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 h1:DACJavvAHhabrF08vX0COfcOBJRhZ8lUbR+ZWIs0Y5g=
 github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0/go.mod h1:E/TSTwGwJL78qG/PmXZO1EjYhfJinVAhrmmHX6Z8B9k=
 github.com/jonboulle/clockwork v0.3.0 h1:9BSCMi8C+0qdApAp4auwX0RkLGUjs956h0EkuQymUhg=
@@ -8,6 +10,8 @@ github.com/llgcode/ps v0.0.0-20210114104736-f4b0c5d1e02e h1:ZAvbj5hI/G/EbAYAcj4y
 github.com/llgcode/ps v0.0.0-20210114104736-f4b0c5d1e02e/go.mod h1:1l8ky+Ew27CMX29uG+a2hNOKpeNYEQjjtiALiBlFQbY=
 golang.org/x/image v0.20.0 h1:7cVCUjQwfL18gyBJOmYvptfSHS8Fb3YUDtfLIZ7Nbpw=
 golang.org/x/image v0.20.0/go.mod h1:0a88To4CYVBAHp5FXJm8o7QbUl37Vd85ply1vyD8auM=
+golang.org/x/net v0.27.0 h1:5K3Njcw06/l2y9vpGCSdcxWOYHOUk3dVNGDXN+FvAys=
+golang.org/x/net v0.27.0/go.mod h1:dDi0PyhWNoiUOrAS8uXv/vnScO4wnHQO4mj9fn/RytE=
 periph.io/x/conn/v3 v3.7.0 h1:f1EXLn4pkf7AEWwkol2gilCNZ0ElY+bxS4WE2PQXfrA=
 periph.io/x/conn/v3 v3.7.0/go.mod h1:ypY7UVxgDbP9PJGwFSVelRRagxyXYfttVh7hJZUHEhg=
 periph.io/x/host/v3 v3.8.2 h1:ayKUDzgUCN0g8+/xM9GTkWaOBhSLVcVHGTfjAOi8OsQ=

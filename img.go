@@ -1,36 +1,38 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
+	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
 	"image"
 	"image/color"
 )
 
-func getBlack() (*image.RGBA, error) {
+func getBlack(ctx context.Context, transportsClient *transports.Client) (*image.RGBA, error) {
+	passages, err := transportsClient.GetTCLPassages(ctx, 290)
+	if err != nil {
+		return nil, fmt.Errorf("getting passages: %w", err)
+	}
+
 	img := newWhite()
 
 	gc := draw2dimg.NewGraphicContext(img)
 
+	gc.SetFillRule(draw2d.FillRuleWinding)
 	gc.SetFillColor(color.RGBA{0, 0, 0, 255})
 	gc.SetStrokeColor(color.RGBA{0, 0, 0, 255})
-	gc.SetLineWidth(2)
 
-	text(gc, "Hello, world", 18, 110, 50)
-
-	return img, nil
-}
-
-func getRed() (*image.RGBA, error) {
-	img := newBlack()
-	gc := draw2dimg.NewGraphicContext(img)
-	gc.SetFillColor(color.RGBA{0, 0, 0, 255})
-	gc.SetStrokeColor(color.RGBA{255, 255, 255, 255})
-	gc.SetLineWidth(2)
-
-	rect(gc, 10, 10, 50, 50)
-	rect(gc, 60, 10, 100, 50)
+	for i, passage := range passages.Passages {
+		x := float64(10 + i*100)
+		text(gc, passage.Ligne, 15, x, 20)
+		for j, delay := range passage.Delays {
+			y := float64(20 + (j+1)*30)
+			text(gc, delay, 15, x, y)
+		}
+	}
 
 	return img, nil
 }
@@ -38,6 +40,8 @@ func getRed() (*image.RGBA, error) {
 func text(gc *draw2dimg.GraphicContext, s string, size, x, y float64) {
 	gc.SetFontData(draw2d.FontData{Name: fontName})
 	gc.SetFontSize(size)
+	gc.FillStringAt(s, x, y)
+	gc.SetLineWidth(2)
 	gc.StrokeStringAt(s, x, y)
 }
 

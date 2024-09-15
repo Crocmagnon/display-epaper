@@ -1,13 +1,16 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
+	"github.com/Crocmagnon/display-epaper/transports"
 	"log"
 	"periph.io/x/host/v3"
+	"time"
 )
 
-func run() error {
+func run(ctx context.Context, transportsClient *transports.Client) error {
 	_, err := host.Init()
 	if err != nil {
 		return fmt.Errorf("initializing host: %w", err)
@@ -18,30 +21,45 @@ func run() error {
 		return fmt.Errorf("initializing epd: %w", err)
 	}
 
-	display.Init()
-	//display.InitFast()
-	display.Clear()
-	display.Refresh()
+	for {
+		select {
+		case <-ctx.Done():
+			log.Println("stopping because of context")
+			return ctx.Err()
+		default:
+		}
 
-	black, err := getBlack()
+		err = loop(ctx, display, transportsClient)
+		if err != nil {
+			log.Printf("error looping: %v\n", err)
+		}
+
+		log.Println("time.Sleep(30s)")
+		time.Sleep(30 * time.Second)
+	}
+}
+
+func loop(ctx context.Context, display *epd.EPD, transportsClient *transports.Client) error {
+	defer func() {
+		if err := display.Sleep(); err != nil {
+			log.Printf("error sleeping: %v\n", err)
+		}
+	}()
+
+	err := display.Init()
+	if err != nil {
+		return fmt.Errorf("initializing display: %w", err)
+	}
+
+	display.Clear()
+
+	black, err := getBlack(ctx, transportsClient)
 	if err != nil {
 		return fmt.Errorf("getting black: %w", err)
 	}
 
-	red, err := getRed()
-	if err != nil {
-		return fmt.Errorf("getting red: %w", err)
-	}
-
-	display.Send(black, red)
-
-	log.Println("sleeping...")
-
-	if err := display.Sleep(); err != nil {
-		return fmt.Errorf("sleeping: %w", err)
-	}
-
-	log.Println("done")
+	display.Send(black, nil)
+	display.Refresh()
 
 	return nil
 }
