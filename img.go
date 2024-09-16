@@ -17,6 +17,7 @@ import (
 	"math"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -35,26 +36,83 @@ func getBlack(
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
 ) (*image.RGBA, error) {
-	bus, err := transportsClient.GetTCLPassages(ctx, 290)
-	if err != nil {
-		log.Println("error getting bus:", err)
-	}
-	tram, err := transportsClient.GetTCLPassages(ctx, 34068)
-	if err != nil {
-		log.Println("error getting tram:", err)
-	}
-	velovRoc, err := transportsClient.GetVelovStation(ctx, 10044)
-	if err != nil {
-		log.Println("error getting velov:", err)
-	}
-	fetes, err := feteClient.GetFete(ctx, nowFunc())
-	if err != nil {
-		log.Println("error getting fetes:", err)
-	}
-	wthr, err := weatherClient.GetWeather(ctx)
-	if err != nil {
-		log.Println("error getting weather:", err)
-	}
+	var (
+		bus      *transports.Passages
+		tram     *transports.Passages
+		velovRoc *transports.Station
+		fetes    *fete.Fete
+		wthr     *weather.Prevision
+	)
+
+	wg := &sync.WaitGroup{}
+	wg.Add(5)
+
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		bus, err = transportsClient.GetTCLPassages(ctx, 290)
+		if err != nil {
+			log.Println("error getting bus:", err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		tram, err = transportsClient.GetTCLPassages(ctx, 34068)
+		if err != nil {
+			log.Println("error getting tram:", err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		velovRoc, err = transportsClient.GetVelovStation(ctx, 10044)
+		if err != nil {
+			log.Println("error getting velov:", err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		fetes, err = feteClient.GetFete(ctx, nowFunc())
+		if err != nil {
+			log.Println("error getting fetes:", err)
+		}
+	}()
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		wthr, err = weatherClient.GetWeather(ctx)
+		if err != nil {
+			log.Println("error getting weather:", err)
+		}
+	}()
+
 	quote := quotes.GetQuote(nowFunc())
 
 	img := newWhite()
@@ -64,6 +122,8 @@ func getBlack(
 	gc.SetFillRule(draw2d.FillRuleWinding)
 	gc.SetFillColor(color.RGBA{255, 255, 255, 255})
 	gc.SetStrokeColor(color.RGBA{0, 0, 0, 255})
+
+	wg.Wait()
 
 	drawTCL(gc, bus, 55)
 	drawTCL(gc, tram, 190)
