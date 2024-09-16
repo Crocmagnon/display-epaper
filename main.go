@@ -11,6 +11,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 	"log"
 	"os"
+	"time"
 )
 
 const fontName = "default"
@@ -40,7 +41,16 @@ func main() {
 		CacheLocation: os.Getenv("WEATHER_CACHE_LOCATION"),
 	})
 
-	if err := run(ctx, transportsClient, feteClient, weatherClient); err != nil {
+	const minSleep = 30 * time.Second
+
+	sleep, err := time.ParseDuration(os.Getenv("SLEEP_DURATION"))
+	if err != nil || sleep < minSleep {
+		sleep = minSleep
+	}
+
+	log.Printf("sleep duration: %v\n", sleep)
+
+	if err := run(ctx, sleep, transportsClient, feteClient, weatherClient); err != nil {
 		log.Fatal("error: ", err)
 	}
 

@@ -8,11 +8,18 @@ import (
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"log"
+	"os"
 	"periph.io/x/host/v3"
 	"time"
 )
 
-func run(ctx context.Context, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client) error {
+func run(
+	ctx context.Context,
+	sleep time.Duration,
+	transportsClient *transports.Client,
+	feteClient *fete.Client,
+	weatherClient *weather.Client,
+) error {
 	_, err := host.Init()
 	if err != nil {
 		return fmt.Errorf("initializing host: %w", err)
@@ -31,6 +38,8 @@ func run(ctx context.Context, transportsClient *transports.Client, feteClient *f
 		default:
 		}
 
+		log.Println("running loop")
+
 		err = loop(
 			ctx,
 			display,
@@ -42,8 +51,8 @@ func run(ctx context.Context, transportsClient *transports.Client, feteClient *f
 			log.Printf("error looping: %v\n", err)
 		}
 
-		log.Println("time.Sleep(30s)")
-		time.Sleep(30 * time.Second)
+		log.Printf("time.Sleep(%v)\n", sleep)
+		time.Sleep(sleep)
 	}
 }
 
@@ -54,19 +63,6 @@ func loop(
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
 ) error {
-	defer func() {
-		if err := display.Sleep(); err != nil {
-			log.Printf("error sleeping: %v\n", err)
-		}
-	}()
-
-	err := display.Init()
-	if err != nil {
-		return fmt.Errorf("initializing display: %w", err)
-	}
-
-	display.Clear()
-
 	black, err := getBlack(
 		ctx,
 		time.Now,
@@ -78,8 +74,60 @@ func loop(
 		return fmt.Errorf("getting black: %w", err)
 	}
 
+	defer func() {
+		if err := display.Sleep(); err != nil {
+			log.Printf("error sleeping: %v\n", err)
+		}
+	}()
+
+	err = initDisplay(display)
+	if err != nil {
+		return fmt.Errorf("initializing display: %w", err)
+	}
+
+	display.Clear()
+
 	display.Send(black)
 	display.Refresh()
 
 	return nil
+}
+
+const filename = "/perm/display-epaper-lastFullRefresh"
+
+func initDisplay(display *epd.EPD) error {
+	if canInitFast() {
+		err := display.InitFast()
+		if err != nil {
+			return fmt.Errorf("running fast init: %w", err)
+		}
+		return nil
+	}
+
+	err := display.Init()
+	if err != nil {
+		return fmt.Errorf("running full init: %w", err)
+	}
+
+	markInitFull()
+
+	return nil
+}
+
+func canInitFast() bool {
+	stat, err := os.Stat(filename)
+	if err != nil {
+		return false
+	}
+
+	return stat.ModTime().Add(12 * time.Hour).After(time.Now())
+}
+
+func markInitFull() {
+	f, err := os.Create(filename)
+	if err != nil {
+		log.Printf("error marking full refresh: %v\n", err)
+	}
+
+	f.Close()
 }

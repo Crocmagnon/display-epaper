@@ -12,6 +12,7 @@ import (
 
 func run(
 	ctx context.Context,
+	_ time.Duration,
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,

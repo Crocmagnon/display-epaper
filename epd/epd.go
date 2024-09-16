@@ -96,10 +96,8 @@ func (e *EPD) sendDataSlice(data []byte) {
 			log.Fatalf("writing to spi: %v", err)
 		}
 		e.csPin.Out(gpio.High)
-		log.Printf("sent chunk %v\n", cursor)
 		cursor = min(cursor+maxSize, toSend)
 	}
-	log.Printf("sent chunk %v\n", cursor)
 }
 
 func (e *EPD) spiWrite(write []byte) ([]byte, error) {
