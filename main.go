@@ -48,9 +48,23 @@ func main() {
 		sleep = minSleep
 	}
 
+	const minInitFastThreshold = 1 * time.Second
+
+	initFastThreshold, err := time.ParseDuration(os.Getenv("INIT_FAST_THRESHOLD"))
+	if err != nil || initFastThreshold < minInitFastThreshold {
+		initFastThreshold = minInitFastThreshold
+	}
+
 	log.Printf("sleep duration: %v\n", sleep)
 
-	if err := run(ctx, sleep, transportsClient, feteClient, weatherClient); err != nil {
+	if err := run(
+		ctx,
+		sleep,
+		initFastThreshold,
+		transportsClient,
+		feteClient,
+		weatherClient,
+	); err != nil {
 		log.Fatal("error: ", err)
 	}
 

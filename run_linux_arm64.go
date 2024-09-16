@@ -17,6 +17,7 @@ import (
 func run(
 	ctx context.Context,
 	sleep time.Duration,
+	initFastThreshold time.Duration,
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
@@ -46,6 +47,7 @@ func run(
 		img, err := loop(
 			ctx,
 			display,
+			initFastThreshold,
 			currentImg,
 			transportsClient,
 			feteClient,
@@ -62,7 +64,15 @@ func run(
 	}
 }
 
-func loop(ctx context.Context, display *epd.EPD, currentImg image.Image, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client) (image.Image, error) {
+func loop(
+	ctx context.Context,
+	display *epd.EPD,
+	initFastThreshold time.Duration,
+	currentImg image.Image,
+	transportsClient *transports.Client,
+	feteClient *fete.Client,
+	weatherClient *weather.Client,
+) (image.Image, error) {
 	img, err := getImg(
 		ctx,
 		time.Now,
@@ -85,7 +95,7 @@ func loop(ctx context.Context, display *epd.EPD, currentImg image.Image, transpo
 		}
 	}()
 
-	err = initDisplay(display)
+	err = initDisplay(display, initFastThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("initializing display: %w", err)
 	}
@@ -100,8 +110,8 @@ func loop(ctx context.Context, display *epd.EPD, currentImg image.Image, transpo
 
 const filename = "/perm/display-epaper-lastFullRefresh"
 
-func initDisplay(display *epd.EPD) error {
-	if canInitFast() {
+func initDisplay(display *epd.EPD, threshold time.Duration) error {
+	if canInitFast(threshold) {
 		err := display.InitFast()
 		if err != nil {
 			return fmt.Errorf("running fast init: %w", err)
@@ -119,13 +129,13 @@ func initDisplay(display *epd.EPD) error {
 	return nil
 }
 
-func canInitFast() bool {
+func canInitFast(threshold time.Duration) bool {
 	stat, err := os.Stat(filename)
 	if err != nil {
 		return false
 	}
 
-	return stat.ModTime().Add(12 * time.Hour).After(time.Now())
+	return stat.ModTime().Add(threshold).After(time.Now())
 }
 
 func markInitFull() {
