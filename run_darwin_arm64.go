@@ -17,7 +17,7 @@ func run(
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
 ) error {
-	img, err := getBlack(
+	img, err := getImg(
 		ctx,
 		func() time.Time {
 			t, err := time.Parse(time.DateOnly, "2024-08-01zzz")

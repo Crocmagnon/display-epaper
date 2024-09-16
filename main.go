@@ -41,7 +41,7 @@ func main() {
 		CacheLocation: os.Getenv("WEATHER_CACHE_LOCATION"),
 	})
 
-	const minSleep = 30 * time.Second
+	const minSleep = 1 * time.Second
 
 	sleep, err := time.ParseDuration(os.Getenv("SLEEP_DURATION"))
 	if err != nil || sleep < minSleep {

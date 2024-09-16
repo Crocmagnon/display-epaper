@@ -7,6 +7,7 @@ import (
 	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
+	"image"
 	"log"
 	"os"
 	"periph.io/x/host/v3"
@@ -30,6 +31,8 @@ func run(
 		return fmt.Errorf("initializing epd: %w", err)
 	}
 
+	var currentImg image.Image
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -40,9 +43,10 @@ func run(
 
 		log.Println("running loop")
 
-		err = loop(
+		img, err := loop(
 			ctx,
 			display,
+			currentImg,
 			transportsClient,
 			feteClient,
 			weatherClient,
@@ -51,19 +55,15 @@ func run(
 			log.Printf("error looping: %v\n", err)
 		}
 
+		currentImg = img
+
 		log.Printf("time.Sleep(%v)\n", sleep)
 		time.Sleep(sleep)
 	}
 }
 
-func loop(
-	ctx context.Context,
-	display *epd.EPD,
-	transportsClient *transports.Client,
-	feteClient *fete.Client,
-	weatherClient *weather.Client,
-) error {
-	black, err := getBlack(
+func loop(ctx context.Context, display *epd.EPD, currentImg image.Image, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client) (image.Image, error) {
+	img, err := getImg(
 		ctx,
 		time.Now,
 		transportsClient,
@@ -71,7 +71,12 @@ func loop(
 		weatherClient,
 	)
 	if err != nil {
-		return fmt.Errorf("getting black: %w", err)
+		return nil, fmt.Errorf("getting black: %w", err)
+	}
+
+	if imgEqual(currentImg, img, epd.Width, epd.Height) {
+		log.Println("Images are equal, doing nothing.")
+		return img, nil
 	}
 
 	defer func() {
@@ -82,15 +87,15 @@ func loop(
 
 	err = initDisplay(display)
 	if err != nil {
-		return fmt.Errorf("initializing display: %w", err)
+		return nil, fmt.Errorf("initializing display: %w", err)
 	}
 
 	display.Clear()
 
-	display.Send(black)
+	display.Send(img)
 	display.Refresh()
 
-	return nil
+	return img, nil
 }
 
 const filename = "/perm/display-epaper-lastFullRefresh"
@@ -130,4 +135,22 @@ func markInitFull() {
 	}
 
 	f.Close()
+}
+
+func imgEqual(img1, img2 image.Image, width, height int) bool {
+	if img1 == nil || img2 == nil {
+		return false
+	}
+
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			r1, g1, b1, a1 := img1.At(x, y).RGBA()
+			r2, g2, b2, a2 := img2.At(x, y).RGBA()
+			if r1 != r2 || g1 != g2 || b1 != b2 || a1 != a2 {
+				return false
+			}
+		}
+	}
+
+	return true
 }

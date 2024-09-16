@@ -29,7 +29,7 @@ const (
 	rightX = 530
 )
 
-func getBlack(
+func getImg(
 	ctx context.Context,
 	nowFunc func() time.Time,
 	transportsClient *transports.Client,
