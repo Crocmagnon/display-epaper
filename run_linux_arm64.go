@@ -42,8 +42,8 @@ func run(ctx context.Context, transportsClient *transports.Client, feteClient *f
 			log.Printf("error looping: %v\n", err)
 		}
 
-		log.Println("time.Sleep(10m)")
-		time.Sleep(10 * time.Minute)
+		log.Println("time.Sleep(30s)")
+		time.Sleep(30 * time.Second)
 	}
 }
 
@@ -78,7 +78,7 @@ func loop(
 		return fmt.Errorf("getting black: %w", err)
 	}
 
-	display.Send(black, nil)
+	display.Send(black)
 	display.Refresh()
 
 	return nil

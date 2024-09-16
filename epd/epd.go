@@ -50,11 +50,11 @@ func New() (*EPD, error) {
 
 func (e *EPD) reset() {
 	e.resetPin.Out(gpio.High)
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	e.resetPin.Out(gpio.Low)
-	time.Sleep(4 * time.Millisecond)
+	time.Sleep(2 * time.Millisecond)
 	e.resetPin.Out(gpio.High)
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 }
 
 func (e *EPD) sendCommand(cmd byte) {
@@ -114,13 +114,11 @@ func (e *EPD) spiWrite(write []byte) ([]byte, error) {
 
 func (e *EPD) readBusy() {
 	e.sendCommand(0x71)
-	busy := e.busyPin.Read()
-	for busy == gpio.Low {
+	for e.busyPin.Read() == gpio.Low {
+		time.Sleep(20 * time.Millisecond)
 		e.sendCommand(0x71)
-		busy = e.busyPin.Read()
-		time.Sleep(200 * time.Millisecond)
 	}
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 }
 
 func (e *EPD) turnOn() error {
@@ -163,18 +161,18 @@ func (e *EPD) Init() error {
 
 	e.reset()
 
-	e.sendCommand(0x01)
-	e.sendDataSlice([]byte{0x07, 0x07, 0x3f, 0x3f})
-
 	e.sendCommand(0x06)
 	e.sendDataSlice([]byte{0x17, 0x17, 0x28, 0x17})
+
+	e.sendCommand(0x01)
+	e.sendDataSlice([]byte{0x07, 0x07, 0x28, 0x17})
 
 	e.sendCommand(0x04)
 	time.Sleep(100 * time.Millisecond)
 	e.readBusy()
 
 	e.sendCommand(0x00)
-	e.sendData(0x0f)
+	e.sendData(0x1f)
 
 	e.sendCommand(0x61)
 	e.sendDataSlice([]byte{0x03, 0x20, 0x01, 0xe0})
@@ -183,7 +181,7 @@ func (e *EPD) Init() error {
 	e.sendData(0x00)
 
 	e.sendCommand(0x50)
-	e.sendDataSlice([]byte{0x11, 0x07})
+	e.sendDataSlice([]byte{0x10, 0x07})
 
 	e.sendCommand(0x60)
 	e.sendData(0x22)
@@ -201,7 +199,10 @@ func (e *EPD) InitFast() error {
 	e.reset()
 
 	e.sendCommand(0x00)
-	e.sendData(0x0f)
+	e.sendData(0x1f)
+
+	e.sendCommand(0x50)
+	e.sendDataSlice([]byte{0x10, 0x07})
 
 	e.sendCommand(0x04)
 	time.Sleep(100 * time.Millisecond)
@@ -216,15 +217,12 @@ func (e *EPD) InitFast() error {
 	e.sendCommand(0xe5)
 	e.sendData(0x5a)
 
-	e.sendCommand(0x50)
-	e.sendDataSlice([]byte{0x11, 0x07})
-
 	return nil
 }
 
 func (e *EPD) Clear() {
 	log.Println("clearing epd")
-	e.Fill(White)
+	e.Send(image.White)
 }
 
 func (e *EPD) Refresh() {
@@ -263,43 +261,15 @@ func (e *EPD) turnOff() error {
 	return nil
 }
 
-type Color int
-
-const (
-	White Color = iota
-	Red
-	Black
-)
-
-func (e *EPD) Fill(c Color) {
-	log.Println("filling...")
-
-	switch c {
-	case White:
-		e.Send(image.White, image.Black)
-	case Black:
-		e.Send(image.Black, image.Black)
-	case Red:
-		e.Send(image.White, image.White)
+func (e *EPD) Send(img image.Image) {
+	if img == nil {
+		log.Println("empty img")
+		return
 	}
-}
 
-func (e *EPD) Send(black image.Image, red image.Image) {
-	if black != nil {
-		log.Println("sending black")
-		e.sendCommand(0x10) // write bw data
-		e.sendImg(black)
-	}
-	if red != nil {
-		log.Println("sending red")
-		e.sendCommand(0x13) // write red data
-		e.sendImg(red)
-	}
-}
-
-func (e *EPD) sendImg(img image.Image) {
 	log.Println("sending img...")
-	// TODO check img size
+	toSend := make([]byte, 0, e.height*e.width/8)
+	toSend2 := make([]byte, 0, e.height*e.width/8)
 	for row := 0; row < e.height; row++ {
 		for col := 0; col < e.width; col += 8 {
 			// this loop converts individual pixels into a single byte
@@ -311,9 +281,16 @@ func (e *EPD) sendImg(img image.Image) {
 					b &= ^(0x80 >> (px % 8))
 				}
 			}
-			e.sendData(b)
+			toSend = append(toSend, ^b)
+			toSend2 = append(toSend2, b)
 		}
 	}
+
+	e.sendCommand(0x10)
+	e.sendDataSlice(toSend2)
+
+	e.sendCommand(0x13)
+	e.sendDataSlice(toSend)
 }
 
 func isdark(r, g, b, _ uint32) bool {
