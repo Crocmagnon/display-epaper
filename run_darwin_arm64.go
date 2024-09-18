@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d/draw2dimg"
@@ -17,6 +18,7 @@ func run(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
+	_ *home_assistant.Client,
 ) error {
 	img, err := getImg(
 		ctx,

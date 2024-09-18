@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"image"
@@ -21,6 +22,7 @@ func run(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
+	hassClient *home_assistant.Client,
 ) error {
 	_, err := host.Init()
 	if err != nil {
@@ -52,6 +54,7 @@ func run(
 			transportsClient,
 			feteClient,
 			weatherClient,
+			hassClient,
 		)
 		if err != nil {
 			log.Printf("error looping: %v\n", err)
@@ -72,7 +75,12 @@ func loop(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
+	hassClient *home_assistant.Client,
 ) (image.Image, error) {
+	if !shouldRun(ctx, hassClient) {
+		return currentImg, nil
+	}
+
 	img, err := getImg(
 		ctx,
 		time.Now,
@@ -106,6 +114,24 @@ func loop(
 	display.Refresh()
 
 	return img, nil
+}
+
+func shouldRun(ctx context.Context, hassClient *home_assistant.Client) bool {
+	dayNight, err := hassClient.GetState(ctx, "input_select.house_day_night")
+	if err != nil {
+		log.Printf("error getting day night: %v ; running\n", err)
+		return true
+	}
+
+	presentAway, err := hassClient.GetState(ctx, "input_select.house_present_away")
+	if err != nil {
+		log.Printf("error getting day night: %v ; running\n", err)
+		return true
+	}
+
+	res := dayNight == "day" && presentAway == "present"
+	log.Printf("running: %v\n", res)
+	return res
 }
 
 const filename = "/perm/display-epaper-lastFullRefresh"

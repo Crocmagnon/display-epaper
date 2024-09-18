@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/golang/freetype/truetype"
@@ -57,6 +58,11 @@ func main() {
 
 	log.Printf("sleep duration: %v\n", sleep)
 
+	hassClient := home_assistant.New(nil, home_assistant.Config{
+		Token:   os.Getenv("HOME_ASSISTANT_TOKEN"),
+		BaseURL: os.Getenv("HOME_ASSISTANT_BASE_URL"),
+	})
+
 	if err := run(
 		ctx,
 		sleep,
@@ -64,6 +70,7 @@ func main() {
 		transportsClient,
 		feteClient,
 		weatherClient,
+		hassClient,
 	); err != nil {
 		log.Fatal("error: ", err)
 	}
