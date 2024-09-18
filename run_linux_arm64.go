@@ -77,19 +77,20 @@ func loop(
 	weatherClient *weather.Client,
 	hassClient *home_assistant.Client,
 ) (image.Image, error) {
-	if !shouldRun(ctx, hassClient) {
-		return currentImg, nil
-	}
+	var img image.Image = image.White
 
-	img, err := getImg(
-		ctx,
-		time.Now,
-		transportsClient,
-		feteClient,
-		weatherClient,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("getting black: %w", err)
+	if shouldDisplay(ctx, hassClient) {
+		var err error
+		img, err = getImg(
+			ctx,
+			time.Now,
+			transportsClient,
+			feteClient,
+			weatherClient,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("getting black: %w", err)
+		}
 	}
 
 	if imgEqual(currentImg, img, epd.Width, epd.Height) {
@@ -103,7 +104,7 @@ func loop(
 		}
 	}()
 
-	err = initDisplay(display, initFastThreshold)
+	err := initDisplay(display, initFastThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("initializing display: %w", err)
 	}
@@ -116,21 +117,21 @@ func loop(
 	return img, nil
 }
 
-func shouldRun(ctx context.Context, hassClient *home_assistant.Client) bool {
+func shouldDisplay(ctx context.Context, hassClient *home_assistant.Client) bool {
 	dayNight, err := hassClient.GetState(ctx, "input_select.house_day_night")
 	if err != nil {
-		log.Printf("error getting day night: %v ; running\n", err)
+		log.Printf("error getting day night: %v ; displaying anyway\n", err)
 		return true
 	}
 
 	presentAway, err := hassClient.GetState(ctx, "input_select.house_present_away")
 	if err != nil {
-		log.Printf("error getting day night: %v ; running\n", err)
+		log.Printf("error getting day night: %v ; displaying anyway\n", err)
 		return true
 	}
 
 	res := dayNight == "day" && presentAway == "present"
-	log.Printf("running: %v\n", res)
+	log.Printf("shouldDisplay: %v\n", res)
 	return res
 }
 
