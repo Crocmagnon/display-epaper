@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
@@ -29,23 +30,18 @@ const (
 	rightX = 530
 )
 
-func getImg(
-	ctx context.Context,
-	nowFunc func() time.Time,
-	transportsClient *transports.Client,
-	feteClient *fete.Client,
-	weatherClient *weather.Client,
-) (*image.RGBA, error) {
+func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client, hassClient *home_assistant.Client) (*image.RGBA, error) {
 	var (
 		bus      *transports.Passages
 		tram     *transports.Passages
 		velovRoc *transports.Station
 		fetes    *fete.Fete
 		wthr     *weather.Prevision
+		msg      string
 	)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(5)
+	wg.Add(6)
 
 	go func() {
 		defer wg.Done()
@@ -112,8 +108,19 @@ func getImg(
 			log.Println("error getting weather:", err)
 		}
 	}()
+	go func() {
+		defer wg.Done()
 
-	quote := quotes.GetQuote(nowFunc())
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		msg, err = hassClient.GetState(ctx, "input_text.e_paper_message")
+		if err != nil {
+			log.Println("error getting hass message:", err)
+		}
+	}()
 
 	img := newWhite()
 
@@ -125,18 +132,22 @@ func getImg(
 
 	wg.Wait()
 
+	if msg == "" {
+		msg = quotes.GetQuote(nowFunc())
+	}
+
 	drawTCL(gc, bus, 55)
 	drawTCL(gc, tram, 190)
 	drawVelov(gc, velovRoc, 350)
 	drawDate(gc, nowFunc())
 	drawFete(gc, fetes)
 	drawWeather(gc, wthr)
-	drawQuote(gc, quote)
+	drawMsg(gc, msg)
 
 	return img, nil
 }
 
-func drawQuote(gc *draw2dimg.GraphicContext, quote string) {
+func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
 	text(gc, quote, 15, leftX, 450)
 
 }

@@ -18,7 +18,7 @@ func run(
 	transportsClient *transports.Client,
 	feteClient *fete.Client,
 	weatherClient *weather.Client,
-	_ *home_assistant.Client,
+	hassClient *home_assistant.Client,
 ) error {
 	img, err := getImg(
 		ctx,
@@ -32,6 +32,7 @@ func run(
 		transportsClient,
 		feteClient,
 		weatherClient,
+		hassClient,
 	)
 	if err != nil {
 		log.Fatal(err)

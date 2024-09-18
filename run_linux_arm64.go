@@ -87,6 +87,7 @@ func loop(
 			transportsClient,
 			feteClient,
 			weatherClient,
+			hassClient,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("getting black: %w", err)
