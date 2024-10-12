@@ -46,7 +46,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 	go func() {
 		defer wg.Done()
 
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
 
 		var err error
@@ -59,7 +59,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 	go func() {
 		defer wg.Done()
 
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
 
 		var err error
@@ -72,7 +72,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 	go func() {
 		defer wg.Done()
 
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
 		defer cancel()
 
 		var err error
