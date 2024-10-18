@@ -125,13 +125,25 @@ func shouldDisplay(ctx context.Context, hassClient *home_assistant.Client) bool 
 		return true
 	}
 
+	log.Printf("found dayNight=%v\n", dayNight)
+
+	hallLights, err := hassClient.GetState(ctx, "light.couloir")
+	if err != nil {
+		log.Printf("error getting hall lights: %v ; displaying anyway\n", err)
+		return true
+	}
+
+	log.Printf("found hallLights=%v\n", hallLights)
+
 	presentAway, err := hassClient.GetState(ctx, "input_select.house_present_away")
 	if err != nil {
 		log.Printf("error getting day night: %v ; displaying anyway\n", err)
 		return true
 	}
 
-	res := dayNight == "day" && presentAway == "present"
+	log.Printf("found presentAway=%v\n", presentAway)
+
+	res := (hallLights == "on" || dayNight == "day") && presentAway == "present"
 	log.Printf("shouldDisplay: %v\n", res)
 	return res
 }
