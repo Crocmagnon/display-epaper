@@ -137,8 +137,8 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 	}
 
 	drawTCL(gc, bus, 55)
-	drawTCL(gc, tram, 190)
-	drawVelov(gc, velovRoc, 350)
+	drawTCL(gc, tram, 205)
+	drawVelov(gc, velovRoc, 365)
 	drawDate(gc, nowFunc())
 	drawFete(gc, fetes)
 	drawWeather(gc, wthr)
