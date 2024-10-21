@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/carlmjohnson/requests"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -152,11 +152,11 @@ type Weather struct {
 
 func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
 	if val, err := loadFromDisk(c.config.CacheLocation); nil == err {
-		log.Println("found weather in cache")
+		slog.InfoContext(ctx, "found weather in cache")
 		return &val, nil
 	}
 
-	log.Println("querying weather")
+	slog.InfoContext(ctx, "querying weather")
 
 	err = requests.URL("https://api.openweathermap.org/data/3.0/onecall").
 		Client(c.client).
@@ -173,7 +173,7 @@ func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
 	}
 
 	if err := res.dumpToDisk(c.config.CacheLocation); err != nil {
-		log.Printf("error dumping files to disk: %v\n", err)
+		slog.ErrorContext(ctx, "error dumping files to disk", "err", err)
 	}
 
 	return res, nil

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/carlmjohnson/requests"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"time"
@@ -70,15 +70,15 @@ func (f Fete) dumpToDisk(location string) error {
 
 func (c *Client) GetFete(ctx context.Context, date time.Time) (res *Fete, err error) {
 	if val, err := loadFromDisk(c.config.CacheLocation); nil == err {
-		log.Println("found fete in cache")
+		slog.InfoContext(ctx, "found fete in cache")
 		if val.Day == date.Day() && val.Month == int(date.Month()) {
-			log.Println("fete cache is up to date")
+			slog.InfoContext(ctx, "fete cache is up to date")
 			return &val, nil
 		}
-		log.Println("fete cache is old, fetching...")
+		slog.InfoContext(ctx, "fete cache is old, fetching...")
 	}
 
-	log.Println("querying fete")
+	slog.InfoContext(ctx, "querying fete")
 	err = requests.URL("https://fetedujour.fr").
 		Pathf("/api/v2/%v/json-normal-%d-%d", c.config.APIKey, date.Day(), date.Month()).
 		UserAgent("e-paper-display").
@@ -90,7 +90,7 @@ func (c *Client) GetFete(ctx context.Context, date time.Time) (res *Fete, err er
 	}
 
 	if err := res.dumpToDisk(c.config.CacheLocation); err != nil {
-		log.Printf("error dumping files to disk: %v\n", err)
+		slog.ErrorContext(ctx, "error dumping files to disk", "err", err)
 	}
 
 	return res, nil

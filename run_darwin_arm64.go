@@ -2,12 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d/draw2dimg"
-	"log"
 	"time"
 )
 
@@ -35,10 +35,11 @@ func run(
 		hassClient,
 	)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+
 	if err := draw2dimg.SaveToPngFile("out/black.png", img); err != nil {
-		log.Fatalf("error saving image: %v", err)
+		return fmt.Errorf("saving img: %w", err)
 	}
 
 	return nil

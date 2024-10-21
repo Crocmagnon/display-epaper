@@ -10,6 +10,7 @@ import (
 	"github.com/Crocmagnon/display-epaper/weather"
 	"image"
 	"log"
+	"log/slog"
 	"os"
 	"periph.io/x/host/v3"
 	"time"
@@ -39,12 +40,12 @@ func run(
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("stopping because of context")
+			slog.InfoContext(ctx, "stopping because of context")
 			return ctx.Err()
 		default:
 		}
 
-		log.Println("running loop")
+		slog.InfoContext(ctx, "running loop")
 
 		img, err := loop(
 			ctx,
@@ -57,12 +58,12 @@ func run(
 			hassClient,
 		)
 		if err != nil {
-			log.Printf("error looping: %v\n", err)
+			slog.ErrorContext(ctx, "error looping", "err", err)
 		}
 
 		currentImg = img
 
-		log.Printf("time.Sleep(%v)\n", sleep)
+		slog.InfoContext(ctx, "sleep", "duration", sleep)
 		time.Sleep(sleep)
 	}
 }
@@ -95,17 +96,17 @@ func loop(
 	}
 
 	if imgEqual(currentImg, img, epd.Width, epd.Height) {
-		log.Println("Images are equal, doing nothing.")
+		slog.InfoContext(ctx, "Images are equal, doing nothing.")
 		return img, nil
 	}
 
 	defer func() {
 		if err := display.Sleep(); err != nil {
-			log.Printf("error sleeping: %v\n", err)
+			slog.ErrorContext(ctx, "error sleeping", "err", err)
 		}
 	}()
 
-	err := initDisplay(display, initFastThreshold)
+	err := initDisplay(ctx, display, initFastThreshold)
 	if err != nil {
 		return nil, fmt.Errorf("initializing display: %w", err)
 	}
@@ -125,15 +126,11 @@ func shouldDisplay(ctx context.Context, hassClient *home_assistant.Client) bool 
 		return true
 	}
 
-	log.Printf("found dayNight=%v\n", dayNight)
-
 	hallLights, err := hassClient.GetState(ctx, "light.couloir")
 	if err != nil {
 		log.Printf("error getting hall lights: %v ; displaying anyway\n", err)
 		return true
 	}
-
-	log.Printf("found hallLights=%v\n", hallLights)
 
 	presentAway, err := hassClient.GetState(ctx, "input_select.house_present_away")
 	if err != nil {
@@ -141,16 +138,19 @@ func shouldDisplay(ctx context.Context, hassClient *home_assistant.Client) bool 
 		return true
 	}
 
-	log.Printf("found presentAway=%v\n", presentAway)
+	slog.InfoContext(ctx, "home assistant states",
+		"hall_lights", hallLights,
+		"day_night", dayNight,
+		"present_away", presentAway)
 
 	res := (hallLights == "on" || dayNight == "day") && presentAway == "present"
-	log.Printf("shouldDisplay: %v\n", res)
+	slog.InfoContext(ctx, "computed should display", "should_display", res)
 	return res
 }
 
 const filename = "/perm/display-epaper-lastFullRefresh"
 
-func initDisplay(display *epd.EPD, threshold time.Duration) error {
+func initDisplay(ctx context.Context, display *epd.EPD, threshold time.Duration) error {
 	if canInitFast(threshold) {
 		err := display.InitFast()
 		if err != nil {
@@ -164,7 +164,7 @@ func initDisplay(display *epd.EPD, threshold time.Duration) error {
 		return fmt.Errorf("running full init: %w", err)
 	}
 
-	markInitFull()
+	markInitFull(ctx)
 
 	return nil
 }
@@ -178,10 +178,10 @@ func canInitFast(threshold time.Duration) bool {
 	return stat.ModTime().Add(threshold).After(time.Now())
 }
 
-func markInitFull() {
+func markInitFull(ctx context.Context) {
 	f, err := os.Create(filename)
 	if err != nil {
-		log.Printf("error marking full refresh: %v\n", err)
+		slog.ErrorContext(ctx, "error marking full refresh", "err", err)
 	}
 
 	f.Close()

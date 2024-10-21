@@ -10,7 +10,7 @@ import (
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
 	"golang.org/x/image/font/gofont/goregular"
-	"log"
+	"log/slog"
 	"os"
 	"time"
 )
@@ -18,14 +18,16 @@ import (
 const fontName = "default"
 
 func main() {
-	log.Println("starting...")
-
 	ctx := context.Background()
+
+	slog.InfoContext(ctx, "starting...")
 
 	font, err := truetype.Parse(goregular.TTF)
 	if err != nil {
-		log.Fatalf("loading font: %v\n", err)
+		slog.ErrorContext(ctx, "error loading font", "err", err)
+		os.Exit(1)
 	}
+
 	fontCache := MyFontCache{}
 	fontCache.Store(draw2d.FontData{Name: fontName}, font)
 	draw2d.SetFontCache(fontCache)
@@ -56,7 +58,9 @@ func main() {
 		initFastThreshold = minInitFastThreshold
 	}
 
-	log.Printf("sleep duration: %v\n", sleep)
+	slog.InfoContext(ctx, "config",
+		"sleep_duration", sleep,
+		"init_fast_threshold", initFastThreshold)
 
 	hassClient := home_assistant.New(nil, home_assistant.Config{
 		Token:   os.Getenv("HOME_ASSISTANT_TOKEN"),
@@ -72,8 +76,9 @@ func main() {
 		weatherClient,
 		hassClient,
 	); err != nil {
-		log.Fatal("error: ", err)
+		slog.ErrorContext(ctx, "error", "err", err)
+		os.Exit(1)
 	}
 
-	log.Println("done")
+	slog.InfoContext(ctx, "done")
 }

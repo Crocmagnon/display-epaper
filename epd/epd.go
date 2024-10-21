@@ -3,7 +3,8 @@ package epd
 import (
 	"fmt"
 	"image"
-	"log"
+	"log/slog"
+	"os"
 	"periph.io/x/conn/v3/gpio"
 	"periph.io/x/conn/v3/physic"
 	"periph.io/x/conn/v3/spi"
@@ -61,7 +62,8 @@ func (e *EPD) sendCommand(cmd byte) {
 	e.dcPin.Out(gpio.Low)
 	e.csPin.Out(gpio.Low)
 	if _, err := e.spiWrite([]byte{cmd}); err != nil {
-		log.Fatalf("writing to spi: %v", err)
+		slog.Error("writing to spi", "err", err)
+		os.Exit(1)
 	}
 	e.csPin.Out(gpio.High)
 }
@@ -70,7 +72,8 @@ func (e *EPD) sendData(data byte) {
 	e.dcPin.Out(gpio.High)
 	e.csPin.Out(gpio.Low)
 	if _, err := e.spiWrite([]byte{data}); err != nil {
-		log.Fatalf("writing to spi: %v", err)
+		slog.Error("writing to spi", "err", err)
+		os.Exit(1)
 	}
 	e.csPin.Out(gpio.High)
 }
@@ -82,7 +85,8 @@ func (e *EPD) sendDataSlice(data []byte) {
 	if toSend <= maxSize {
 		e.csPin.Out(gpio.Low)
 		if _, err := e.spiWrite(data); err != nil {
-			log.Fatalf("writing to spi: %v", err)
+			slog.Error("writing to spi", "err", err)
+			os.Exit(1)
 		}
 		e.csPin.Out(gpio.High)
 		return
@@ -93,7 +97,8 @@ func (e *EPD) sendDataSlice(data []byte) {
 		chunk := data[cursor:min(cursor+maxSize, toSend)]
 		e.csPin.Out(gpio.Low)
 		if _, err := e.spiWrite(chunk); err != nil {
-			log.Fatalf("writing to spi: %v", err)
+			slog.Error("writing to spi", "err", err)
+			os.Exit(1)
 		}
 		e.csPin.Out(gpio.High)
 		cursor = min(cursor+maxSize, toSend)
@@ -120,7 +125,7 @@ func (e *EPD) readBusy() {
 }
 
 func (e *EPD) turnOn() error {
-	log.Println("turning on")
+	slog.Info("turning on")
 	if err := e.resetPin.Out(gpio.Low); err != nil {
 		return fmt.Errorf("setting reset pin to low: %w", err)
 	}
@@ -151,7 +156,7 @@ func (e *EPD) turnOn() error {
 }
 
 func (e *EPD) Init() error {
-	log.Println("initializing EPD")
+	slog.Info("initializing EPD")
 
 	if err := e.turnOn(); err != nil {
 		return fmt.Errorf("turning on: %w", err)
@@ -188,7 +193,7 @@ func (e *EPD) Init() error {
 }
 
 func (e *EPD) InitFast() error {
-	log.Println("initializing Fast EPD")
+	slog.Info("initializing Fast EPD")
 
 	if err := e.turnOn(); err != nil {
 		return fmt.Errorf("turning on: %w", err)
@@ -219,19 +224,19 @@ func (e *EPD) InitFast() error {
 }
 
 func (e *EPD) Clear() {
-	log.Println("clearing epd")
+	slog.Info("clearing epd")
 	e.Send(image.White)
 }
 
 func (e *EPD) Refresh() {
-	log.Println("refreshing...")
+	slog.Info("refreshing...")
 	e.sendCommand(0x12)
 	time.Sleep(100 * time.Millisecond)
 	e.readBusy()
 }
 
 func (e *EPD) Sleep() error {
-	log.Println("sleeping display...")
+	slog.Info("sleeping display...")
 	e.sendCommand(0x02)
 	e.readBusy()
 
@@ -247,7 +252,7 @@ func (e *EPD) Sleep() error {
 }
 
 func (e *EPD) turnOff() error {
-	log.Println("turning off...")
+	slog.Info("turning off...")
 	if err := e.spiReg.Close(); err != nil {
 		return fmt.Errorf("closing SPI: %w", err)
 	}
@@ -261,11 +266,11 @@ func (e *EPD) turnOff() error {
 
 func (e *EPD) Send(img image.Image) {
 	if img == nil {
-		log.Println("empty img")
+		slog.Info("empty img")
 		return
 	}
 
-	log.Println("sending img...")
+	slog.Info("sending img...")
 	toSend := make([]byte, 0, e.height*e.width/8)
 	toSend2 := make([]byte, 0, e.height*e.width/8)
 	for row := 0; row < e.height; row++ {

@@ -14,7 +14,7 @@ import (
 	"github.com/llgcode/draw2d/draw2dimg"
 	"image"
 	"image/color"
-	"log"
+	"log/slog"
 	"math"
 	"strconv"
 	"strings"
@@ -53,7 +53,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		bus, err = transportsClient.GetTCLPassages(ctx, 290)
 		if err != nil {
-			log.Println("error getting bus:", err)
+			slog.ErrorContext(ctx, "error getting bus", "err", err)
 		}
 	}()
 	go func() {
@@ -66,7 +66,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		tram, err = transportsClient.GetTCLPassages(ctx, 34068)
 		if err != nil {
-			log.Println("error getting tram:", err)
+			slog.ErrorContext(ctx, "error getting tram", "err", err)
 		}
 	}()
 	go func() {
@@ -79,7 +79,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		velovRoc, err = transportsClient.GetVelovStation(ctx, 10044)
 		if err != nil {
-			log.Println("error getting velov:", err)
+			slog.ErrorContext(ctx, "error getting velov", "err", err)
 		}
 	}()
 	go func() {
@@ -92,7 +92,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		fetes, err = feteClient.GetFete(ctx, nowFunc())
 		if err != nil {
-			log.Println("error getting fetes:", err)
+			slog.ErrorContext(ctx, "error getting fetes", "err", err)
 		}
 	}()
 	go func() {
@@ -105,7 +105,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		wthr, err = weatherClient.GetWeather(ctx)
 		if err != nil {
-			log.Println("error getting weather:", err)
+			slog.ErrorContext(ctx, "error getting weather", "err", err)
 		}
 	}()
 	go func() {
@@ -118,7 +118,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		msg, err = hassClient.GetState(ctx, "input_text.e_paper_message")
 		if err != nil {
-			log.Println("error getting hass message:", err)
+			slog.ErrorContext(ctx, "error getting hass message", "err", err)
 		}
 	}()
 
@@ -141,7 +141,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 	drawVelov(gc, velovRoc, 365)
 	drawDate(gc, nowFunc())
 	drawFete(gc, fetes)
-	drawWeather(gc, wthr)
+	drawWeather(ctx, gc, wthr)
 	drawMsg(gc, msg)
 
 	return img, nil
@@ -152,13 +152,15 @@ func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
 
 }
 
-func drawWeather(gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
+func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
 	if wthr == nil {
 		return
 	}
 
-	if len(wthr.Daily) == 0 || len(wthr.Daily[0].Weather) == 0 {
-		log.Println("missing daily or daily weather")
+	dailyLen := len(wthr.Daily)
+	dailyWeatherLen := len(wthr.Daily[0].Weather)
+	if dailyLen == 0 || dailyWeatherLen == 0 {
+		slog.ErrorContext(ctx, "missing daily or daily weather", "daily_len", dailyLen, "daily_weather_len", dailyWeatherLen)
 		return
 	}
 
@@ -166,7 +168,7 @@ func drawWeather(gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
 	dailyWeather := daily.Weather[0]
 	err := drawWeatherIcon(gc, dailyWeather)
 	if err != nil {
-		log.Println("Failed to draw weather icon:", err)
+		slog.ErrorContext(ctx, "Failed to draw weather icon", "err", err)
 	}
 
 	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 120)
