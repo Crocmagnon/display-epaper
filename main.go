@@ -7,7 +7,6 @@ import (
 	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
-	"github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
 	"log/slog"
@@ -15,23 +14,16 @@ import (
 	"time"
 )
 
-const (
-	fontRegular = "regular"
-	fontBold    = "bold"
-	fontItalic  = "italic"
-	fontIcons   = "icons"
-)
-
 func main() {
 	ctx := context.Background()
 
 	slog.InfoContext(ctx, "starting...")
-	fontCache := MyFontCache{}
 
-	loadFont(ctx, fontCache, fonts.Regular, fontRegular)
-	loadFont(ctx, fontCache, fonts.Bold, fontBold)
-	loadFont(ctx, fontCache, fonts.Italic, fontItalic)
-	loadFont(ctx, fontCache, fonts.Icons, fontIcons)
+	fontCache, err := fonts.NewCache()
+	if err != nil {
+		slog.ErrorContext(ctx, "could not create font cache", "error", err.Error())
+		os.Exit(1)
+	}
 
 	draw2d.SetFontCache(fontCache)
 
@@ -84,13 +76,4 @@ func main() {
 	}
 
 	slog.InfoContext(ctx, "done")
-}
-
-func loadFont(ctx context.Context, fontCache MyFontCache, ttf []byte, name string) {
-	font, err := truetype.Parse(ttf)
-	if err != nil {
-		slog.ErrorContext(ctx, "error loading font", "err", err)
-		os.Exit(1)
-	}
-	fontCache.Store(draw2d.FontData{Name: name}, font)
 }
