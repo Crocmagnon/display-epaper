@@ -148,7 +148,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 }
 
 func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
-	text(gc, quote, 15, leftX, 450)
+	text(gc, quote, 15, leftX, 450, fontRegular)
 
 }
 
@@ -171,11 +171,11 @@ func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weathe
 		slog.ErrorContext(ctx, "Failed to draw weather icon", "err", err)
 	}
 
-	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 120)
+	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 120, fontRegular)
 
-	text(gc, "max "+formatTemp(daily.Temp.Max), 18, 120, 45)
-	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), 18, 120, 80)
-	text(gc, dailyWeather.Description, 18, 120, 115)
+	text(gc, "max "+formatTemp(daily.Temp.Max), 18, 120, 45, fontRegular)
+	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), 18, 120, 80, fontRegular)
+	text(gc, dailyWeather.Description, 18, 120, 115, fontRegular)
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {
@@ -204,13 +204,13 @@ func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffse
 		return
 	}
 
-	text(gc, station.Name, 23, rightX, yOffset)
-	text(gc, fmt.Sprintf("V : %v - P : %v", station.BikesAvailable, station.DocksAvailable), 23, rightX, yOffset+30)
+	text(gc, station.Name, 23, rightX, yOffset, fontBold)
+	text(gc, fmt.Sprintf("V : %v - P : %v", station.BikesAvailable, station.DocksAvailable), 22, rightX, yOffset+30, fontRegular)
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
-	text(gc, now.Format("15:04"), 110, leftX, 300)
-	text(gc, getDate(now), 30, leftX, 345)
+	text(gc, now.Format("15:04"), 110, leftX, 300, fontBold)
+	text(gc, getDate(now), 30, leftX, 345, fontRegular)
 }
 
 func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete) {
@@ -218,7 +218,7 @@ func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete) {
 		return
 	}
 
-	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 18, leftX, 380)
+	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 18, leftX, 380, fontRegular)
 }
 
 func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffset float64) {
@@ -228,10 +228,10 @@ func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffse
 
 	for i, passage := range passages.Passages {
 		x := float64(rightX + i*120)
-		text(gc, passage.Ligne, 23, x, yoffset)
+		text(gc, passage.Ligne, 23, x, yoffset, fontBold)
 		for j, delay := range passage.Delays {
 			y := yoffset + float64(j+1)*35
-			text(gc, delay, 23, x, y)
+			text(gc, delay, 22, x, y, fontRegular)
 			if j >= 2 { // limit number of delays displayed
 				break
 			}
@@ -239,7 +239,7 @@ func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffse
 	}
 }
 
-func text(gc *draw2dimg.GraphicContext, s string, size, x, y float64) {
+func text(gc *draw2dimg.GraphicContext, s string, size, x, y float64, fontName string) {
 	gc.SetFillColor(color.RGBA{0, 0, 0, 255})
 	gc.SetFontData(draw2d.FontData{Name: fontName})
 	gc.SetFontSize(size)

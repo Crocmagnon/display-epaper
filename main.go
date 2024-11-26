@@ -9,27 +9,27 @@ import (
 	"github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
+	"golang.org/x/image/font/gofont/gobold"
 	"golang.org/x/image/font/gofont/goregular"
 	"log/slog"
 	"os"
 	"time"
 )
 
-const fontName = "default"
+const (
+	fontRegular = "goregular"
+	fontBold    = "gobold"
+)
 
 func main() {
 	ctx := context.Background()
 
 	slog.InfoContext(ctx, "starting...")
-
-	font, err := truetype.Parse(goregular.TTF)
-	if err != nil {
-		slog.ErrorContext(ctx, "error loading font", "err", err)
-		os.Exit(1)
-	}
-
 	fontCache := MyFontCache{}
-	fontCache.Store(draw2d.FontData{Name: fontName}, font)
+
+	loadFont(ctx, fontCache, goregular.TTF, fontRegular)
+	loadFont(ctx, fontCache, gobold.TTF, fontBold)
+
 	draw2d.SetFontCache(fontCache)
 
 	transportsClient := transports.New(nil, transports.Config{})
@@ -81,4 +81,13 @@ func main() {
 	}
 
 	slog.InfoContext(ctx, "done")
+}
+
+func loadFont(ctx context.Context, fontCache MyFontCache, ttf []byte, name string) {
+	font, err := truetype.Parse(ttf)
+	if err != nil {
+		slog.ErrorContext(ctx, "error loading font", "err", err)
+		os.Exit(1)
+	}
+	fontCache.Store(draw2d.FontData{Name: name}, font)
 }
