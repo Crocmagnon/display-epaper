@@ -19,6 +19,7 @@ const (
 	fontRegular = "regular"
 	fontBold    = "bold"
 	fontItalic  = "italic"
+	fontIcons   = "icons"
 )
 
 func main() {
@@ -30,6 +31,7 @@ func main() {
 	loadFont(ctx, fontCache, fonts.Regular, fontRegular)
 	loadFont(ctx, fontCache, fonts.Bold, fontBold)
 	loadFont(ctx, fontCache, fonts.Italic, fontItalic)
+	loadFont(ctx, fontCache, fonts.Icons, fontIcons)
 
 	draw2d.SetFontCache(fontCache)
 

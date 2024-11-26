@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/fonts"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/quotes"
 	"github.com/Crocmagnon/display-epaper/transports"
@@ -209,7 +210,15 @@ func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffse
 	}
 
 	text(gc, station.Name, 23, rightX, yOffset, fontBold)
-	text(gc, fmt.Sprintf("V : %v - P : %v", station.BikesAvailable, station.DocksAvailable), 22, rightX, yOffset+30, fontRegular)
+
+	yOffset += 30
+
+	text(gc, "\uE0D6", 22, rightX, yOffset+fonts.IconYOffset, fontIcons) // bike icon
+	text(gc, strconv.Itoa(station.BikesAvailable), 22, rightX+fonts.IconXOffset, yOffset, fontRegular)
+
+	nextCol := rightX + 100.0
+	text(gc, "\uEC08", 22, nextCol, yOffset+fonts.IconYOffset, fontIcons) // parking icon
+	text(gc, strconv.Itoa(station.DocksAvailable), 22, nextCol+fonts.IconXOffset, yOffset, fontRegular)
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
@@ -232,7 +241,8 @@ func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffse
 
 	for i, passage := range passages.Passages {
 		x := float64(rightX + i*120)
-		text(gc, passage.Ligne, 23, x, yoffset, fontBold)
+		text(gc, "\uE106", 23, x, yoffset+fonts.IconYOffset, fontIcons)
+		text(gc, passage.Ligne, 23, x+fonts.IconXOffset, yoffset, fontBold)
 		for j, delay := range passage.Delays {
 			y := yoffset + float64(j+1)*35
 			text(gc, delay, 22, x, y, fontRegular)

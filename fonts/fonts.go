@@ -10,3 +10,11 @@ var Regular []byte
 
 //go:embed ttf/OpenSans-Italic.ttf
 var Italic []byte
+
+//go:embed ttf/Phosphor.ttf
+var Icons []byte
+
+const (
+	IconXOffset = 38
+	IconYOffset = 2
+)
