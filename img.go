@@ -221,7 +221,7 @@ func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffse
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
-	text(gc, now.Format("15:04"), 110, leftX, 300, fonts.Bold)
+	text(gc, now.Format("15:04"), 110, leftX, 300, fonts.SemiBold)
 	text(gc, getDate(now), 30, leftX, 345, fonts.Regular)
 }
 
