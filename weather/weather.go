@@ -55,8 +55,12 @@ type Prevision struct {
 			Description string `json:"description"`
 			Icon        string `json:"icon"`
 		} `json:"weather"`
+		Rain struct {
+			OneHour float64 `json:"1h"`
+		} `json:"rain"`
 	} `json:"current"`
-	Daily  []Daily `json:"daily"`
+	Daily  []Daily  `json:"daily"`
+	Hourly []Hourly `json:"hourly"`
 	Alerts []struct {
 		SenderName  string   `json:"sender_name"`
 		Event       string   `json:"event"`
@@ -150,6 +154,23 @@ type Weather struct {
 	Icon        string `json:"icon"`
 }
 
+type Hourly struct {
+	Dt         int       `json:"dt"`
+	Temp       float64   `json:"temp"`
+	FeelsLike  float64   `json:"feels_like"`
+	Pressure   int       `json:"pressure"`
+	Humidity   int       `json:"humidity"`
+	DewPoint   float64   `json:"dew_point"`
+	Uvi        float64   `json:"uvi"`
+	Clouds     int       `json:"clouds"`
+	Visibility int       `json:"visibility"`
+	WindSpeed  float64   `json:"wind_speed"`
+	WindDeg    int       `json:"wind_deg"`
+	WindGust   float64   `json:"wind_gust"`
+	Weather    []Weather `json:"weather"`
+	Pop        float64   `json:"pop"`
+}
+
 func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
 	if val, err := loadFromDisk(c.config.CacheLocation); nil == err {
 		slog.InfoContext(ctx, "found weather in cache")
@@ -165,7 +186,7 @@ func (c *Client) GetWeather(ctx context.Context) (res *Prevision, err error) {
 		Param("appid", c.config.APIKey).
 		Param("units", "metric").
 		Param("lang", "fr").
-		Param("exclude", "minutely,hourly").
+		Param("exclude", "minutely").
 		ToJSON(&res).
 		Fetch(ctx)
 	if err != nil {

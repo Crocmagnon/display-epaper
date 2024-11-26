@@ -159,27 +159,57 @@ func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weathe
 
 	dailyLen := len(wthr.Daily)
 	dailyWeatherLen := len(wthr.Daily[0].Weather)
-	if dailyLen == 0 || dailyWeatherLen == 0 {
-		slog.ErrorContext(ctx, "missing daily or daily weather", "daily_len", dailyLen, "daily_weather_len", dailyWeatherLen)
+	currentWeatherLen := len(wthr.Current.Weather)
+	if dailyLen == 0 || dailyWeatherLen == 0 || currentWeatherLen == 0 {
+		slog.ErrorContext(ctx, "missing daily or daily weather or current weather", "daily_len", dailyLen, "daily_weather_len", dailyWeatherLen, "current_weather_len", currentWeatherLen)
 		return
 	}
 
-	daily := wthr.Daily[0]
-	dailyWeather := daily.Weather[0]
-	err := drawWeatherIcon(gc, wthr.Current.Weather[0])
+	current := wthr.Current
+	currentWeather := current.Weather[0]
+	err := drawWeatherIcon(gc, currentWeather)
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to draw weather icon", "err", err)
 	}
 
-	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 125, fonts.Regular)
+	text(gc, formatTemp(current.Temp), 23, leftX, 125, fonts.Regular)
+	text(gc, fmt.Sprintf("(%v)", formatTemp(current.FeelsLike)), 15, leftX+5, 150, fonts.Regular)
 
-	const xAlign = 120
+	daily := wthr.Daily[0]
+	dailyWeather := daily.Weather[0]
+
+	const xAlign = 140
 	const fontSize = 18
 
 	text(gc, "journée", fontSize, xAlign, 35, fonts.Bold)
-	text(gc, "max "+formatTemp(daily.Temp.Max), fontSize, xAlign, 65, fonts.Regular)
-	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), fontSize, xAlign, 95, fonts.Regular)
-	text(gc, dailyWeather.Description, fontSize, xAlign, 125, fonts.Regular)
+	text(gc, dailyWeather.Description, fontSize, xAlign, 65, fonts.Regular)
+	text(gc, "max "+formatTemp(daily.Temp.Max), fontSize, xAlign, 95, fonts.Regular)
+	text(gc, fmt.Sprintf("pluie %v%%", formatPct(daily.Pop)), fontSize, xAlign, 125, fonts.Regular)
+
+	nextRainTime, nextRainProba := findNextRain(wthr.Hourly) // limit search to next 12 hours
+	if nextRainProba > 0 {
+		text(gc, "\uE06C", 14, xAlign, 155, fonts.Icons)
+		text(gc, fmt.Sprintf("%v (%v%%)", nextRainTime.Format("15h"), formatPct(nextRainProba)), 14, xAlign+fonts.IconXOffset, 155, fonts.Regular)
+	}
+}
+
+func formatPct(pct float64) int {
+	return int(math.Round(pct * 100))
+}
+
+// return next timestamp & pop where pop > 0
+func findNextRain(hourly []weather.Hourly) (time.Time, float64) {
+	if len(hourly) > 12 {
+		hourly = hourly[:12]
+	}
+
+	for _, h := range hourly {
+		if h.Pop > 0 {
+			return time.Unix(int64(h.Dt), 0), h.Pop
+		}
+	}
+
+	return time.Time{}, 0
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {
