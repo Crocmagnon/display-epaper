@@ -186,10 +186,13 @@ func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weathe
 	text(gc, "max "+formatTemp(daily.Temp.Max), fontSize, xAlign, 95, fonts.Regular)
 	text(gc, fmt.Sprintf("pluie %v%%", formatPct(daily.Pop)), fontSize, xAlign, 125, fonts.Regular)
 
-	nextRainTime, nextRainProba := findNextRain(wthr.Hourly) // limit search to next 12 hours
-	if nextRainProba > 0 {
-		text(gc, "\uE06C", 14, xAlign, 155, fonts.Icons)
-		text(gc, fmt.Sprintf("%v (%v%%)", nextRainTime.Format("15h"), formatPct(nextRainProba)), 14, xAlign+fonts.IconXOffset, 155, fonts.Regular)
+	nextRainStart, nextRainEnd, probas := findNextRain(wthr.Hourly)
+	avg, maxProba := averageAndMax(probas)
+	if len(probas) > 0 {
+		text(gc, "\uE1B4", 14, xAlign, 155+fonts.IconYOffset, fonts.Icons)
+		text(gc, fmt.Sprintf("%v-%v     %v%%      %v%%", nextRainStart.Format("15h"), nextRainEnd.Format("15h"), formatPct(avg), formatPct(maxProba)), 14, xAlign+20, 155, fonts.Regular)
+		text(gc, "\uEDAA", 14, xAlign+95, 155+fonts.IconYOffset, fonts.Icons)
+		text(gc, "\uE4AE", 14, xAlign+155, 155+fonts.IconYOffset, fonts.Icons)
 	}
 }
 
@@ -197,19 +200,52 @@ func formatPct(pct float64) int {
 	return int(math.Round(pct * 100))
 }
 
-// return next timestamp & pop where pop > 0
-func findNextRain(hourly []weather.Hourly) (time.Time, float64) {
+func findNextRain(hourly []weather.Hourly) (time.Time, time.Time, []float64) {
 	if len(hourly) > 12 {
 		hourly = hourly[:12]
 	}
 
+	var (
+		start, end time.Time
+		probas     []float64
+	)
+
 	for _, h := range hourly {
+		if h.Pop == 0 && start != (time.Time{}) {
+			end = hourlyToTime(h)
+			break
+		}
+
 		if h.Pop > 0 {
-			return time.Unix(int64(h.Dt), 0), h.Pop
+			if start == (time.Time{}) {
+				start = hourlyToTime(h)
+			}
+
+			probas = append(probas, h.Pop)
 		}
 	}
 
-	return time.Time{}, 0
+	return start, end, probas
+}
+
+func averageAndMax(probas []float64) (avg float64, max float64) {
+	if len(probas) == 0 {
+		return 0, 0
+	}
+
+	var sum float64
+	for _, proba := range probas {
+		sum += proba
+		if proba > max {
+			max = proba
+		}
+	}
+
+	return sum / float64(len(probas)), max
+}
+
+func hourlyToTime(h weather.Hourly) time.Time {
+	return time.Unix(int64(h.Dt), 0)
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {
