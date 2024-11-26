@@ -136,7 +136,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 		msg = quotes.GetQuote(nowFunc())
 	}
 
-	drawTCL(gc, bus, 55)
+	drawTCL(gc, bus, 45)
 	drawTCL(gc, tram, 205)
 	drawVelov(gc, velovRoc, 365)
 	drawDate(gc, nowFunc())
@@ -148,7 +148,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 }
 
 func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
-	text(gc, quote, 15, leftX, 450, fontRegular)
+	text(gc, quote, 15, leftX, 450, fontItalic)
 
 }
 
@@ -166,16 +166,20 @@ func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weathe
 
 	daily := wthr.Daily[0]
 	dailyWeather := daily.Weather[0]
-	err := drawWeatherIcon(gc, dailyWeather)
+	err := drawWeatherIcon(gc, wthr.Current.Weather[0])
 	if err != nil {
 		slog.ErrorContext(ctx, "Failed to draw weather icon", "err", err)
 	}
 
-	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 120, fontRegular)
+	text(gc, formatTemp(wthr.Current.Temp), 23, leftX, 125, fontRegular)
 
-	text(gc, "max "+formatTemp(daily.Temp.Max), 18, 120, 45, fontRegular)
-	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), 18, 120, 80, fontRegular)
-	text(gc, dailyWeather.Description, 18, 120, 115, fontRegular)
+	const xAlign = 120
+	const fontSize = 18
+
+	text(gc, "journée", fontSize, xAlign, 35, fontBold)
+	text(gc, "max "+formatTemp(daily.Temp.Max), fontSize, xAlign, 65, fontRegular)
+	text(gc, fmt.Sprintf("pluie %v%%", int(math.Round(daily.Pop*100))), fontSize, xAlign, 95, fontRegular)
+	text(gc, dailyWeather.Description, fontSize, xAlign, 125, fontRegular)
 }
 
 func drawWeatherIcon(gc *draw2dimg.GraphicContext, dailyWeather weather.Weather) error {

@@ -3,22 +3,22 @@ package main
 import (
 	"context"
 	"github.com/Crocmagnon/display-epaper/fete"
+	"github.com/Crocmagnon/display-epaper/fonts"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
 	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/golang/freetype/truetype"
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
-	"golang.org/x/image/font/gofont/gobold"
-	"golang.org/x/image/font/gofont/goregular"
 	"log/slog"
 	"os"
 	"time"
 )
 
 const (
-	fontRegular = "goregular"
-	fontBold    = "gobold"
+	fontRegular = "regular"
+	fontBold    = "bold"
+	fontItalic  = "italic"
 )
 
 func main() {
@@ -27,8 +27,9 @@ func main() {
 	slog.InfoContext(ctx, "starting...")
 	fontCache := MyFontCache{}
 
-	loadFont(ctx, fontCache, goregular.TTF, fontRegular)
-	loadFont(ctx, fontCache, gobold.TTF, fontBold)
+	loadFont(ctx, fontCache, fonts.Regular, fontRegular)
+	loadFont(ctx, fontCache, fonts.Bold, fontBold)
+	loadFont(ctx, fontCache, fonts.Italic, fontItalic)
 
 	draw2d.SetFontCache(fontCache)
 
