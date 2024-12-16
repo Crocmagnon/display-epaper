@@ -30,15 +30,9 @@ const (
 
 func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weather.Client, hassClient *home_assistant.Client) (*image.RGBA, error) {
 	var (
-		bus37_1        time.Time
-		bus37_2        time.Time
-		bus37_3        time.Time
-		busC17_1       time.Time
-		busC17_2       time.Time
-		busC17_3       time.Time
-		tramT1_1       time.Time
-		tramT1_2       time.Time
-		tramT1_3       time.Time
+		bus37          []time.Time
+		busC17         []time.Time
+		tramT1         []time.Time
 		velovRocBikes  string
 		velovRocStands string
 		feteName       string
@@ -55,47 +49,9 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
-		var err error
-
-		bus37_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_1")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting 37_1", "err", err)
-		}
-		bus37_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_2")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting 37_2", "err", err)
-		}
-		bus37_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_3")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting 37_3", "err", err)
-		}
-
-		busC17_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_1")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting C17_1", "err", err)
-		}
-		busC17_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_2")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting C17_2", "err", err)
-		}
-		busC17_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_3")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting C17_3", "err", err)
-		}
-
-		tramT1_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_1")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting T1_1", "err", err)
-		}
-		tramT1_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_2")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting T1_2", "err", err)
-		}
-		tramT1_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_3")
-		if err != nil {
-			slog.ErrorContext(ctx, "error getting T1_3", "err", err)
-		}
-
+		bus37 = getTimeStates(ctx, hassClient, "sensor.tcl_37_1", "sensor.tcl_37_2", "sensor.tcl_37_3")
+		busC17 = getTimeStates(ctx, hassClient, "sensor.tcl_c17_1", "sensor.tcl_c17_2", "sensor.tcl_c17_3")
+		tramT1 = getTimeStates(ctx, hassClient, "sensor.tcl_t1_1", "sensor.tcl_t1_2", "sensor.tcl_t1_3")
 	}()
 	go func() {
 		defer wg.Done()
@@ -173,9 +129,9 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 
 	wg.Wait()
 
-	drawTCL(gc, "37", []time.Time{bus37_1, bus37_2, bus37_3}, nowFunc(), rightX, 45)
-	drawTCL(gc, "C17", []time.Time{busC17_1, busC17_2, busC17_3}, nowFunc(), rightX+120, 45)
-	drawTCL(gc, "T1", []time.Time{tramT1_1, tramT1_2, tramT1_3}, nowFunc(), rightX+120, 205)
+	drawTCL(gc, "37", bus37, nowFunc(), rightX, 45)
+	drawTCL(gc, "C17", busC17, nowFunc(), rightX+120, 45)
+	drawTCL(gc, "T1", tramT1, nowFunc(), rightX+120, 205)
 	drawVelov(gc, "Rocard Octavie", velovRocBikes, velovRocStands, 365)
 	drawDate(gc, nowFunc())
 	drawFete(gc, feteName)
@@ -183,6 +139,19 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 	drawMsg(gc, msg)
 
 	return img, nil
+}
+
+func getTimeStates(ctx context.Context, hassClient *home_assistant.Client, entityIDs ...string) []time.Time {
+	var times []time.Time
+	for _, entityID := range entityIDs {
+		t, err := hassClient.GetTimeState(ctx, entityID)
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting time state", "err", err, "entityID", entityID)
+		}
+		times = append(times, t)
+	}
+
+	return times
 }
 
 func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
