@@ -340,8 +340,14 @@ func drawTCL(gc *draw2dimg.GraphicContext, title string, times []time.Time, now 
 			continue
 		}
 		delay := t.Sub(now).Truncate(time.Minute)
+		delayStr := "passé"
+		if delay > time.Minute {
+			delayStr = fmt.Sprintf("%v min", delay.Minutes())
+		} else if delay > 0 {
+			delayStr = "proche"
+		}
 		y := yoffset + float64(j+1)*35
-		text(gc, fmt.Sprintf("%v min", delay.Minutes()), 22, x, y, fonts.Regular)
+		text(gc, delayStr, 22, x, y, fonts.Regular)
 	}
 }
 
