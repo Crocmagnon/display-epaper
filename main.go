@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/fonts"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
-	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d"
 	_ "golang.org/x/image/bmp"
@@ -26,13 +24,6 @@ func main() {
 	}
 
 	draw2d.SetFontCache(fontCache)
-
-	transportsClient := transports.New(nil, transports.Config{})
-
-	feteClient := fete.New(nil, fete.Config{
-		APIKey:        os.Getenv("FETE_API_KEY"),
-		CacheLocation: os.Getenv("FETE_CACHE_LOCATION"),
-	})
 
 	weatherClient := weather.New(nil, weather.Config{
 		APIKey:        os.Getenv("WEATHER_API_KEY"),
@@ -62,15 +53,7 @@ func main() {
 		BaseURL: os.Getenv("HOME_ASSISTANT_BASE_URL"),
 	})
 
-	if err := run(
-		ctx,
-		sleep,
-		initFastThreshold,
-		transportsClient,
-		feteClient,
-		weatherClient,
-		hassClient,
-	); err != nil {
+	if err := run(ctx, sleep, initFastThreshold, weatherClient, hassClient); err != nil {
 		slog.ErrorContext(ctx, "error", "err", err)
 		os.Exit(1)
 	}

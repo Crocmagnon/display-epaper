@@ -5,11 +5,8 @@ import (
 	"embed"
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
-	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/fonts"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
-	"github.com/Crocmagnon/display-epaper/quotes"
-	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
@@ -31,31 +28,74 @@ const (
 	rightX = 530
 )
 
-func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *transports.Client, feteClient *fete.Client, weatherClient *weather.Client, hassClient *home_assistant.Client) (*image.RGBA, error) {
+func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weather.Client, hassClient *home_assistant.Client) (*image.RGBA, error) {
 	var (
-		bus      *transports.Passages
-		tram     *transports.Passages
-		velovRoc *transports.Station
-		fetes    *fete.Fete
-		wthr     *weather.Prevision
-		msg      string
+		bus37_1        time.Time
+		bus37_2        time.Time
+		bus37_3        time.Time
+		busC17_1       time.Time
+		busC17_2       time.Time
+		busC17_3       time.Time
+		tramT1_1       time.Time
+		tramT1_2       time.Time
+		tramT1_3       time.Time
+		velovRocBikes  string
+		velovRocStands string
+		feteName       string
+		wthr           *weather.Prevision
+		msg            string
 	)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(6)
+	wg.Add(5)
 
 	go func() {
 		defer wg.Done()
 
-		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+		ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 
 		var err error
 
-		bus, err = transportsClient.GetTCLPassages(ctx, 290)
+		bus37_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_1")
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting bus", "err", err)
+			slog.ErrorContext(ctx, "error getting 37_1", "err", err)
 		}
+		bus37_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_2")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting 37_2", "err", err)
+		}
+		bus37_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_37_3")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting 37_3", "err", err)
+		}
+
+		busC17_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_1")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting C17_1", "err", err)
+		}
+		busC17_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_2")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting C17_2", "err", err)
+		}
+		busC17_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_c17_3")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting C17_3", "err", err)
+		}
+
+		tramT1_1, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_1")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting T1_1", "err", err)
+		}
+		tramT1_2, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_2")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting T1_2", "err", err)
+		}
+		tramT1_3, err = hassClient.GetTimeState(ctx, "sensor.tcl_t1_3")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting T1_3", "err", err)
+		}
+
 	}()
 	go func() {
 		defer wg.Done()
@@ -65,22 +105,13 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		var err error
 
-		tram, err = transportsClient.GetTCLPassages(ctx, 34068)
+		velovRocBikes, err = hassClient.GetState(ctx, "sensor.velov_rocard_octavie_bikes")
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting tram", "err", err)
+			slog.ErrorContext(ctx, "error getting velov rocard bikes", "err", err)
 		}
-	}()
-	go func() {
-		defer wg.Done()
-
-		ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-		defer cancel()
-
-		var err error
-
-		velovRoc, err = transportsClient.GetVelovStation(ctx, 10044)
+		velovRocStands, err = hassClient.GetState(ctx, "sensor.velov_rocard_octavie_stands")
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting velov", "err", err)
+			slog.ErrorContext(ctx, "error getting velov rocard stands", "err", err)
 		}
 	}()
 	go func() {
@@ -91,9 +122,9 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 		var err error
 
-		fetes, err = feteClient.GetFete(ctx, nowFunc())
+		feteName, err = hassClient.GetState(ctx, "sensor.fete_du_jour")
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting fetes", "err", err)
+			slog.ErrorContext(ctx, "error getting fete_du_jour", "err", err)
 		}
 	}()
 	go func() {
@@ -121,6 +152,15 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 		if err != nil {
 			slog.ErrorContext(ctx, "error getting hass message", "err", err)
 		}
+
+		if msg != "" {
+			return
+		}
+
+		msg, err = hassClient.GetState(ctx, "input_text.proverbe_du_jour")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting hass proverbe", "err", err)
+		}
 	}()
 
 	img := newWhite()
@@ -133,15 +173,12 @@ func getImg(ctx context.Context, nowFunc func() time.Time, transportsClient *tra
 
 	wg.Wait()
 
-	if msg == "" {
-		msg = quotes.GetQuote(nowFunc())
-	}
-
-	drawTCL(gc, bus, 45)
-	drawTCL(gc, tram, 205)
-	drawVelov(gc, velovRoc, 365)
+	drawTCL(gc, "37", []time.Time{bus37_1, bus37_2, bus37_3}, nowFunc(), rightX, 45)
+	drawTCL(gc, "C17", []time.Time{busC17_1, busC17_2, busC17_3}, nowFunc(), rightX+120, 45)
+	drawTCL(gc, "T1", []time.Time{tramT1_1, tramT1_2, tramT1_3}, nowFunc(), rightX+120, 205)
+	drawVelov(gc, "Rocard Octavie", velovRocBikes, velovRocStands, 365)
 	drawDate(gc, nowFunc())
-	drawFete(gc, fetes)
+	drawFete(gc, feteName)
 	drawWeather(ctx, gc, wthr)
 	drawMsg(gc, msg)
 
@@ -269,21 +306,17 @@ func formatTemp(temp float64) string {
 	return fmt.Sprintf("%v°C", int(math.Round(temp)))
 }
 
-func drawVelov(gc *draw2dimg.GraphicContext, station *transports.Station, yOffset float64) {
-	if station == nil {
-		return
-	}
-
-	text(gc, station.Name, 23, rightX, yOffset, fonts.Bold)
+func drawVelov(gc *draw2dimg.GraphicContext, title, bikes, stands string, yOffset float64) {
+	text(gc, title, 23, rightX, yOffset, fonts.Bold)
 
 	yOffset += 30
 
 	text(gc, "\uE0D6", 22, rightX, yOffset+fonts.IconYOffset, fonts.Icons) // bike icon
-	text(gc, strconv.Itoa(station.BikesAvailable), 22, rightX+fonts.IconXOffset, yOffset, fonts.Regular)
+	text(gc, bikes, 22, rightX+fonts.IconXOffset, yOffset, fonts.Regular)
 
 	nextCol := rightX + 100.0
 	text(gc, "\uEC08", 22, nextCol, yOffset+fonts.IconYOffset, fonts.Icons) // parking icon
-	text(gc, strconv.Itoa(station.DocksAvailable), 22, nextCol+fonts.IconXOffset, yOffset, fonts.Regular)
+	text(gc, stands, 22, nextCol+fonts.IconXOffset, yOffset, fonts.Regular)
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
@@ -291,30 +324,24 @@ func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
 	text(gc, getDate(now), 30, leftX, 345, fonts.Regular)
 }
 
-func drawFete(gc *draw2dimg.GraphicContext, fetes *fete.Fete) {
-	if fetes == nil {
+func drawFete(gc *draw2dimg.GraphicContext, feteName string) {
+	if feteName == "" {
 		return
 	}
 
-	text(gc, fmt.Sprintf("On fête les %s", fetes.Name), 18, leftX, 380, fonts.Regular)
+	text(gc, fmt.Sprintf("On fête les %s", feteName), 18, leftX, 380, fonts.Regular)
 }
 
-func drawTCL(gc *draw2dimg.GraphicContext, passages *transports.Passages, yoffset float64) {
-	if passages == nil {
-		return
-	}
-
-	for i, passage := range passages.Passages {
-		x := float64(rightX + i*120)
-		text(gc, "\uE106", 23, x, yoffset+fonts.IconYOffset, fonts.Icons)
-		text(gc, passage.Ligne, 23, x+fonts.IconXOffset, yoffset, fonts.Bold)
-		for j, delay := range passage.Delays {
-			y := yoffset + float64(j+1)*35
-			text(gc, delay, 22, x, y, fonts.Regular)
-			if j >= 2 { // limit number of delays displayed
-				break
-			}
+func drawTCL(gc *draw2dimg.GraphicContext, title string, times []time.Time, now time.Time, x, yoffset float64) {
+	text(gc, "\uE106", 23, x, yoffset+fonts.IconYOffset, fonts.Icons)
+	text(gc, title, 23, x+fonts.IconXOffset, yoffset, fonts.Bold)
+	for j, t := range times {
+		if t == (time.Time{}) {
+			continue
 		}
+		delay := t.Sub(now).Truncate(time.Minute)
+		y := yoffset + float64(j+1)*35
+		text(gc, fmt.Sprintf("%v min", delay.Minutes()), 22, x, y, fonts.Regular)
 	}
 }
 

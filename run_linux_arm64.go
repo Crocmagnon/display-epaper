@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Crocmagnon/display-epaper/epd"
-	"github.com/Crocmagnon/display-epaper/fete"
 	"github.com/Crocmagnon/display-epaper/home_assistant"
-	"github.com/Crocmagnon/display-epaper/transports"
 	"github.com/Crocmagnon/display-epaper/weather"
 	"image"
 	"log"
@@ -20,8 +18,6 @@ func run(
 	ctx context.Context,
 	sleep time.Duration,
 	initFastThreshold time.Duration,
-	transportsClient *transports.Client,
-	feteClient *fete.Client,
 	weatherClient *weather.Client,
 	hassClient *home_assistant.Client,
 ) error {
@@ -47,16 +43,7 @@ func run(
 
 		slog.InfoContext(ctx, "running loop")
 
-		img, err := loop(
-			ctx,
-			display,
-			initFastThreshold,
-			currentImg,
-			transportsClient,
-			feteClient,
-			weatherClient,
-			hassClient,
-		)
+		img, err := loop(ctx, display, initFastThreshold, currentImg, weatherClient, hassClient)
 		if err != nil {
 			slog.ErrorContext(ctx, "error looping", "err", err)
 		}
@@ -73,8 +60,6 @@ func loop(
 	display *epd.EPD,
 	initFastThreshold time.Duration,
 	currentImg image.Image,
-	transportsClient *transports.Client,
-	feteClient *fete.Client,
 	weatherClient *weather.Client,
 	hassClient *home_assistant.Client,
 ) (image.Image, error) {
@@ -82,14 +67,7 @@ func loop(
 
 	if shouldDisplay(ctx, hassClient) {
 		var err error
-		img, err = getImg(
-			ctx,
-			time.Now,
-			transportsClient,
-			feteClient,
-			weatherClient,
-			hassClient,
-		)
+		img, err = getImg(ctx, time.Now, weatherClient, hassClient)
 		if err != nil {
 			return nil, fmt.Errorf("getting black: %w", err)
 		}
