@@ -152,7 +152,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 	drawWeather(ctx, gc, wthr)
 	drawMsg(gc, msg)
 
-	drawProgress(gc, pregnancy, "Baby loading...", color.RGBA{255, 255, 255, 255}, color.RGBA{0, 0, 0, 255})
+	drawProgress(gc, pregnancy, "\uE774" /* baby icon */, color.RGBA{255, 255, 255, 255}, color.RGBA{0, 0, 0, 255})
 
 	return img, nil
 }
@@ -174,42 +174,26 @@ func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
 	text(gc, quote, 15, leftX, 460, fonts.Italic)
 }
 
-func drawProgress(gc *draw2dimg.GraphicContext, pct float64, msg string, white color.RGBA, black color.RGBA) {
+func drawProgress(gc *draw2dimg.GraphicContext, pct float64, icon string, white color.RGBA, black color.RGBA) {
 	const (
-		topY        = 405
-		height      = 20
+		topY        = 400
+		height      = 21
 		width       = 400
-		textYOffset = 15
-		textXOffset = 5
+		barLeftX    = leftX + 38
+		iconYOffset = 2
 	)
 	progressWidth := width * pct / 100
 
 	// Draw outer rectangle
 	gc.SetFillColor(white)
 	gc.SetStrokeColor(black)
-	gc.BeginPath()
-	gc.MoveTo(leftX, topY)
-	gc.LineTo(leftX+width, topY)
-	gc.LineTo(leftX+width, topY+height)
-	gc.LineTo(leftX, topY+height)
-	gc.Close()
-	gc.FillStroke()
+	rect(gc, barLeftX, topY, barLeftX+width, topY+height)
 
 	// Fill progress
 	gc.SetFillColor(black)
-	gc.BeginPath()
-	gc.MoveTo(leftX, topY) // should always be called first for a new path
-	gc.LineTo(leftX+progressWidth, topY)
-	gc.LineTo(leftX+progressWidth, topY+height)
-	gc.LineTo(leftX, topY+height)
-	gc.Close()
-	gc.FillStroke()
+	rect(gc, barLeftX, topY, barLeftX+progressWidth, topY+height)
 
-	// Draw text
-	gc.SetFillColor(white)
-	gc.SetFontData(draw2d.FontData{Name: fonts.Regular})
-	gc.SetFontSize(12)
-	gc.FillStringAt(msg, leftX+textXOffset, topY+textYOffset)
+	text(gc, icon, 22, leftX, topY+height+iconYOffset, fonts.Icons)
 }
 
 func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
