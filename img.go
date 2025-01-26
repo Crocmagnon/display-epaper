@@ -38,10 +38,11 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 		feteName       string
 		wthr           *weather.Prevision
 		msg            string
+		pregnancy      float64
 	)
 
 	wg := &sync.WaitGroup{}
-	wg.Add(5)
+	wg.Add(6)
 
 	go func() {
 		defer wg.Done()
@@ -118,6 +119,19 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 			slog.ErrorContext(ctx, "error getting hass proverbe", "err", err)
 		}
 	}()
+	go func() {
+		defer wg.Done()
+
+		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+		defer cancel()
+
+		var err error
+
+		pregnancy, err = hassClient.GetFloatState(ctx, "sensor.pregnancy_progress")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting hass pregnancy", "err", err)
+		}
+	}()
 
 	img := newWhite()
 
@@ -138,6 +152,8 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 	drawWeather(ctx, gc, wthr)
 	drawMsg(gc, msg)
 
+	drawProgress(gc, pregnancy, "Baby loading...", color.RGBA{255, 255, 255, 255}, color.RGBA{0, 0, 0, 255})
+
 	return img, nil
 }
 
@@ -155,7 +171,45 @@ func getTimeStates(ctx context.Context, hassClient *home_assistant.Client, entit
 }
 
 func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
-	text(gc, quote, 15, leftX, 450, fonts.Italic)
+	text(gc, quote, 15, leftX, 460, fonts.Italic)
+}
+
+func drawProgress(gc *draw2dimg.GraphicContext, pct float64, msg string, white color.RGBA, black color.RGBA) {
+	const (
+		topY        = 405
+		height      = 20
+		width       = 400
+		textYOffset = 15
+		textXOffset = 5
+	)
+	progressWidth := width * pct / 100
+
+	// Draw outer rectangle
+	gc.SetFillColor(white)
+	gc.SetStrokeColor(black)
+	gc.BeginPath()
+	gc.MoveTo(leftX, topY)
+	gc.LineTo(leftX+width, topY)
+	gc.LineTo(leftX+width, topY+height)
+	gc.LineTo(leftX, topY+height)
+	gc.Close()
+	gc.FillStroke()
+
+	// Fill progress
+	gc.SetFillColor(black)
+	gc.BeginPath()
+	gc.MoveTo(leftX, topY) // should always be called first for a new path
+	gc.LineTo(leftX+progressWidth, topY)
+	gc.LineTo(leftX+progressWidth, topY+height)
+	gc.LineTo(leftX, topY+height)
+	gc.Close()
+	gc.FillStroke()
+
+	// Draw text
+	gc.SetFillColor(white)
+	gc.SetFontData(draw2d.FontData{Name: fonts.Regular})
+	gc.SetFontSize(12)
+	gc.FillStringAt(msg, leftX+textXOffset, topY+textYOffset)
 }
 
 func drawWeather(ctx context.Context, gc *draw2dimg.GraphicContext, wthr *weather.Prevision) {
@@ -289,8 +343,8 @@ func drawVelov(gc *draw2dimg.GraphicContext, title, bikes, stands string, yOffse
 }
 
 func drawDate(gc *draw2dimg.GraphicContext, now time.Time) {
-	text(gc, now.Format("15:04"), 110, leftX, 300, fonts.SemiBold)
-	text(gc, getDate(now), 30, leftX, 345, fonts.Regular)
+	text(gc, now.Format("15:04"), 110, leftX, 290, fonts.SemiBold)
+	text(gc, getDate(now), 30, leftX, 335, fonts.Regular)
 }
 
 func drawFete(gc *draw2dimg.GraphicContext, feteName string) {
@@ -298,7 +352,7 @@ func drawFete(gc *draw2dimg.GraphicContext, feteName string) {
 		return
 	}
 
-	text(gc, fmt.Sprintf("On fête les %s", feteName), 18, leftX, 380, fonts.Regular)
+	text(gc, fmt.Sprintf("On fête les %s", feteName), 18, leftX, 370, fonts.Regular)
 }
 
 func drawTCL(gc *draw2dimg.GraphicContext, title string, times []time.Time, now time.Time, x, yoffset float64) {

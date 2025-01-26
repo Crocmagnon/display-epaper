@@ -2,8 +2,10 @@ package home_assistant
 
 import (
 	"context"
+	"fmt"
 	"github.com/carlmjohnson/requests"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -45,6 +47,24 @@ func (c *Client) GetTimeState(ctx context.Context, entityID string) (time.Time, 
 	}
 
 	return resp.State, nil
+}
+
+func (c *Client) GetFloatState(ctx context.Context, entityID string) (float64, error) {
+	var resp struct {
+		State string `json:"state"`
+	}
+
+	err := c.getState(ctx, entityID, &resp)
+	if err != nil {
+		return 0, err
+	}
+
+	val, err := strconv.ParseFloat(resp.State, 64)
+	if err != nil {
+		return 0, fmt.Errorf("converting to float: %w", err)
+	}
+
+	return val, nil
 }
 
 func (c *Client) getState(ctx context.Context, entityID string, resp any) error {
