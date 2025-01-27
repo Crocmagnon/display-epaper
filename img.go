@@ -342,19 +342,26 @@ func drawFete(gc *draw2dimg.GraphicContext, feteName string) {
 func drawTCL(gc *draw2dimg.GraphicContext, title string, times []time.Time, now time.Time, x, yoffset float64) {
 	text(gc, "\uE106", 23, x, yoffset+fonts.IconYOffset, fonts.Icons)
 	text(gc, title, 23, x+fonts.IconXOffset, yoffset, fonts.Bold)
-	for j, t := range times {
+	pos := 1
+	for _, t := range times {
 		if t == (time.Time{}) {
 			continue
 		}
 		delay := t.Sub(now).Truncate(time.Minute)
-		delayStr := "passé"
+		delayStr := ""
 		if delay > time.Minute {
 			delayStr = fmt.Sprintf("%v min", delay.Minutes())
 		} else if delay > 0 {
 			delayStr = "proche"
 		}
-		y := yoffset + float64(j+1)*35
+
+		if delayStr == "" {
+			continue // skip past occurrences
+		}
+
+		y := yoffset + float64(pos)*35
 		text(gc, delayStr, 22, x, y, fonts.Regular)
+		pos++
 	}
 }
 
