@@ -39,6 +39,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 		wthr           *weather.Prevision
 		msg            string
 		pregnancy      float64
+		pregnancyWeeks string
 	)
 
 	wg := &sync.WaitGroup{}
@@ -129,7 +130,12 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 
 		pregnancy, err = hassClient.GetFloatState(ctx, "sensor.pregnancy_progress")
 		if err != nil {
-			slog.ErrorContext(ctx, "error getting hass pregnancy", "err", err)
+			slog.ErrorContext(ctx, "error getting hass pregnancy progress", "err", err)
+		}
+
+		pregnancyWeeks, err = hassClient.GetState(ctx, "sensor.pregnancy_weeks")
+		if err != nil {
+			slog.ErrorContext(ctx, "error getting hass pregnancy weeks", "err", err)
 		}
 	}()
 
@@ -151,6 +157,7 @@ func getImg(ctx context.Context, nowFunc func() time.Time, weatherClient *weathe
 	drawFete(gc, feteName)
 	drawWeather(ctx, gc, wthr)
 	drawMsg(gc, msg)
+	drawPregnancyWeeks(gc, pregnancyWeeks)
 
 	drawProgress(gc, pregnancy, "\uE774" /* baby icon */, color.RGBA{255, 255, 255, 255}, color.RGBA{0, 0, 0, 255})
 
@@ -174,9 +181,13 @@ func drawMsg(gc *draw2dimg.GraphicContext, quote string) {
 	text(gc, quote, 15, leftX, 460, fonts.Italic)
 }
 
+func drawPregnancyWeeks(gc *draw2dimg.GraphicContext, msg string) {
+	text(gc, msg, 15, leftX+130, 425, fonts.Regular)
+}
+
 func drawProgress(gc *draw2dimg.GraphicContext, pct float64, icon string, white color.RGBA, black color.RGBA) {
 	const (
-		topY        = 400
+		topY        = 385
 		height      = 21
 		width       = 400
 		barLeftX    = leftX + 38
